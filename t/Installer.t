@@ -1,13 +1,31 @@
 #! perl -w
-our $VERSION = 0.3;	# 28 November 2002 23:30 CET
+our $VERSION = 2;	# 27 May 2003
 
 use strict;
 use Cwd;
 
 print "1..10\n";
 
-use Tk::Wizard::Installer;
+use lib '../..';
+use Tk::Wizard::Installer 0.023;
 print "ok 1\n";
+
+our $TEMP_DIR = $ENV{TEMP} || $ENV{TMP} || "C:/temp" ;
+mkdir("/temp",0777) if !-d $TEMP_DIR;
+$TEMP_DIR =~ s/\\/\//g;
+
+my $MADE_DIR;
+
+my $files = {
+	'http://www.cpan.org/' => './cpan_index1.html',
+	'http://www.cpan.org/' => './cpan_index2.html',
+	'http://www.leegoddard.com/g/blue_head[2].gif' => 'big.gif',
+};
+
+if (!-e '__perlwizardtest'){
+	$MADE_DIR=1;
+	$files->{'http://localhost/test.txt'} = '__perlwizardtest/test2.txt';
+};
 
 
 #
@@ -37,12 +55,13 @@ print ref $wizard->cget(-preNextButtonAction) eq "CODE"? "ok 3\n":"not ok 3\n";
 our $SPLASH       	= $wizard->addPage( sub{ page_splash ($wizard)} );
 print $SPLASH==1? "ok 4\n":"not ok 4\n";
 
-our $COPYRIGHT_PAGE	= $wizard->addLicencePage( -filepath => "./perl_licence_blab.txt" );
-print $COPYRIGHT_PAGE==2? "ok 5\n":"not ok 5\n";
 
-$wizard->addPage( sub{ page_one($wizard) });
+print "ok 5\n";
 
-$wizard->addPage( sub{ page_two($wizard) });
+$wizard->addDownloadPage(
+	-files=> $files,
+#	-on_error => 1,
+);
 
 our $user_chosen_dir;
 
@@ -50,7 +69,8 @@ our $GET_DIR 	= $wizard->addDirSelectPage (
 	-variable => \$user_chosen_dir,
 	-nowarnings	=> 1,
 );
-print $GET_DIR==5? "ok 6\n":"not ok 6\n";
+# Is page 3?
+print $GET_DIR==3? "ok 6\n":"not ok 6 # $GET_DIR\n";
 
 $_ = $wizard->addPage( sub {
 	return $wizard->blank_frame(
@@ -69,43 +89,30 @@ print ref $wizard->parent eq "Tk::Wizard::Installer"? "ok 8\n":"not ok 8\n";
 $wizard->Show();
 MainLoop;
 print "ok 10\n";
+unlink '__perlwizardtest' if $MADE_DIR;
 exit;
 
 
 sub page_splash { my $wizard = shift;
-	my ($frame,@pl) = $wizard->blank_frame(-title=>"Welcome to the Wizard",
-	-subtitle=>"Wizard Test Wizard",
+	my ($frame,@pl) = $wizard->blank_frame(-title=>"Installer Test",
+	-subtitle=>"Testing Tk::Wizard::Installer $Tk::Wizard::Installer::VERSION",
 	-text=>
-		"This Wizard is a simple test of the Wizard, and nothing more.\n\nNo software will be installed, but you'll hopefully see a licence agreement page, and a directory listing page."
+		"This Wizard is a simple test of the Wizard, and nothing more.
+
+No software will be installed, but you'll hopefully see a few things.
+
+Latest addition: file download
+
+"
 	);
 	return $frame;
 }
 
-
-sub page_one { my $wizard = shift;
-	my $frame = $wizard->blank_frame(
-		-title=>"-title here",
-		-subtitle=>'The text found in the -subtitle paramter appears here on the screen; quite a long string I trust: and sadly ugly still',
-		-text=>"-text goes here.\n\nTk::Wizard is but a baby, and needs your help to grow into a happy, healthy, well-adjusted widget. Sadly, I've only been using Tk::* for a couple of weeks, and all this packing takes a bit of getting used to. And I'm also working to a deadline on the project which bore this Wizard, so please excuse some coding which is currently rather slip-shod, but which be tightened in the future."
-	);
-	return $frame;
-}
-
-sub page_two { my $wizard = shift;
-	my $frame = $wizard->blank_frame(
-		-title=>"The Title",
-		-text=>"A page without a -subtitle."
-	);
-	return $frame;
-}
 
 
 sub preNextButtonAction { my $wizard = shift;
-	$_ = $wizard->currentPage;
-	if (/^$COPYRIGHT_PAGE$/){
-		return $wizard->callback_licence_agreement;
-	}
-	elsif (/^$GET_DIR$/){
+	local $_ = $wizard->currentPage;
+	if (/^$GET_DIR$/){
 		$_ = $wizard->callback_dirSelect( \$user_chosen_dir );
 		if ($_==1){
 			$_ = chdir $user_chosen_dir;

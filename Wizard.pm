@@ -7,7 +7,7 @@ Tk::Wizard - GUI for step-by-step interactive logical process
 =cut
 
 use vars qw/$VERSION/;
-$VERSION = 1.039;	# 15 April 2003 -wait
+$VERSION = 1.06;	# 29 May 2003
 
 
 # Still alpha.
@@ -102,9 +102,11 @@ The wizard feel is largly based upon the Microsoft(TM,etc) wizard style: the def
 simillar to that found in Microsoft Windows 95; a more Windows 2000-like feel is also
 supported (see the C<-style> entry in L<WIDGET-SPECIFIC OPTIONS>. Sub-classing the
 module to provide different look-and-feel is highly encourage: please see
-L<NOTES ON SUB-CLASSING Tk::Wizard>.
+L<NOTES ON SUB-CLASSING Tk::Wizard>. If anyone would like to do a I<Darwin> or
+I<Aqua> version, please let me know how you would like to handle the buttons. I'm not
+hot on advertising widgets.
 
-NB: B<THIS IS AN ALPHA RELEASE: ALL CONTRIBUTIONS ARE WELCOME!>
+NB: B<THIS IS STILL AN ALPHA RELEASE: ALL CONTRIBUTIONS ARE WELCOME!>
 
 Please also see L<IMPLIMENTATION NOTES>.
 
@@ -163,8 +165,13 @@ maintain or restore any initial current working directory.
 
 The supplied images F<wizard_blue.gif> and F<wizard_blue_top.gif> are
 used by default.
-If you supply others you will probably have to set the Wizard's C<-width> and
+
+If you supply others you may have to set the Wizard's C<-width> and
 C<-height> properties, as there is (currently) no image-sized checking performed.
+
+A large number of nicely-sized Wizard images - some old, some new -
+by Pál Kornél can be found at L<http://kornelpal.aom.hu/innosetup/files/WizardImages.cab>.
+(1748 KB, 2003-01-06).
 
 =back
 
@@ -260,12 +267,12 @@ sub Populate { my ($cw, $args) = @_;
 	$cw->{wizardPageList}	= [];
 	$cw->{wizardPagePtr}	= 0;
 	$cw->{wizardFrame}		= 0;
-	$cw->{-imagepath}		= ""	|| $args->{-imagepath};
-	$cw->{-topimagepath}	= "" 	|| $args->{-topimagepath};
-	$cw->{-style}			= "95"	|| $args->{-style};
+	$cw->{-imagepath}		= $args->{-imagepath}		|| "";
+	$cw->{-topimagepath}	= $args->{-topimagepath}	|| "";
+	$cw->{-style}			= $args->{-style} 			|| "95";
 	$cw->{background_userchoice} = $args->{-background} || $cw->ConfigSpecs->{-background}[3];
 	$cw->{background} = $cw->{background_userchoice};
-	$args->{-title}  = "Generic Wizard" unless $args->{-title};
+	$args->{-title}  = "Wizard" unless $args->{-title};
 	$args->{-style} = $cw->{-style} unless $args->{-style};	# yuck
 	$args->{-width } = ($args->{-style} eq 'top'? 500 : 570) unless $args->{-width};
 	$args->{-height} = 370 unless $args->{-height};
@@ -348,12 +355,12 @@ sub Populate { my ($cw, $args) = @_;
 
 sub background { my ($self,$operand)=(shift,shift);
 	if (defined $operand){
-#		warn "set bg to $operand";
 		$self->{background} = $operand;
 		return $operand;
 	}
-	elsif ($self->{wizardPagePtr}==0 or $self->{wizardPagePtr}==$#{$self->{wizardPageList}}){
-#		warn "pages are such ($self->{wizardPagePtr}) that bg is set to white from $self->{background}";
+	elsif ($self->{-style} ne '95' and (
+		$self->{wizardPagePtr}==0 or $self->{wizardPagePtr}==$#{$self->{wizardPageList}}
+	)){
 		$self->{background} = 'white';
 		return 'white';
 	} else {
@@ -469,7 +476,7 @@ sub initial_layout { my $self = shift;
 			$self->Photo( "sidebanner", -file => $self->cget(-topimagepath));
 			$self->{left_object} = $self->Label( -image => "sidebanner")->pack( -side => "top", -anchor => "e", );
 		} else {
-			$self->{left_object} = $self->Frame( -width => 250 )->pack( -side => "top", -anchor => "n", -padx=>5, -pady=>2);
+			$self->{left_object} = $self->Frame( -width => 250 )->pack( -side => "top", -anchor => "n", );
 		}
 	}
 }
@@ -479,8 +486,10 @@ sub initial_layout { my $self = shift;
 # Maybe sub-class me
 #
 sub render_current_page { my $self = shift;
-	if ($self->{wizardPagePtr} > 0
-	and $self->{wizardPagePtr} < $#{$self->{wizardPageList}}){
+	my %frame_pack = ( -side => "top" );
+	if (($self->{wizardPagePtr} > 0 and $self->{wizardPagePtr} < $#{$self->{wizardPageList}})
+		and $self->{-style} ne '95'
+	){
 		$self->{tagtext}->packForget;
 		$self->{tagline}->packForget;
 		$self->{tagtext}->pack(qw/-side left -anchor w/);
@@ -490,10 +499,14 @@ sub render_current_page { my $self = shift;
 		$self->{tagline}->pack(qw/-side left -anchor e/);
 	}
 
-	if (($self->cget(-style) eq 'top' and $self->{wizardPagePtr} == 0)
-		or $self->{wizardPagePtr} == $#{$self->{wizardPageList}}
+	if (
+		$self->{wizardPagePtr} == 0 or $self->{wizardPagePtr} == $#{$self->{wizardPageList}}
 	){
 		$self->{left_object}->pack( -side => "left", -anchor => "w");
+		if ($self->{-style} ne '95'){
+			$frame_pack{-expand} = 1;
+			$frame_pack{-fill} = 'both';
+		}
 	} elsif ($self->cget(-style) eq 'top'){
 		$self->{left_object}->packForget;
 	}
@@ -501,7 +514,7 @@ sub render_current_page { my $self = shift;
 	$self->configure("-background"=>$self->cget("-background"));
 	$self->{nextButton}->focus(); # Default focus possibly over-ridden in wizardFrame
 	$self->{wizardFrame}->packForget if $self->{wizardFrame};
-	$self->{wizardFrame} = $self->{wizardPageList}->[$self->{wizardPagePtr}]->()->pack(qw/-side top/);
+	$self->{wizardFrame} = $self->{wizardPageList}->[$self->{wizardPagePtr}]->()->pack(%frame_pack);
 }
 
 
@@ -610,10 +623,10 @@ sub blank_frame { my ($self,$args) = (shift,{@_});
 	and $self->{wizardPagePtr} != $#{$self->{wizardPageList}}
 	){
 		my $top_frame = $frame->Frame(-background=>'white')->pack(-fill=>'x',-side=>'top',-anchor=>'e');
- 		$_ = $top_frame->Frame(-background=>'white');
-		$_->Photo( "topimage", -file => $self->cget(-topimagepath));
-		$_->Label( -image => "topimage")->pack( -side=>"right", -anchor=>"e", -padx=>5,-pady=>5);
-		$_->pack(-side=>'right',-anchor=>'n');
+ 		my $p = $top_frame->Frame(-background=>'white');
+		$p->Photo( "topimage", -file => $self->cget(-topimagepath));
+		$p->Label( -image => "topimage")->pack( -side=>"right", -anchor=>"e", -padx=>5,-pady=>5);
+		$p->pack(-side=>'right',-anchor=>'n');
 		my $title_frame = $top_frame->Frame(-background=>'white')->pack(
 			-side=>'left',-anchor=>'w',-expand=>1,-fill=>'x'
 		);
@@ -623,19 +636,20 @@ sub blank_frame { my ($self,$args) = (shift,{@_});
 		# just sod it and only support short lines?
 		#
 		if ($args->{-title}){
-			# Indent left of title: -height should come from font metrics of TITLE_FONT_TOP;
+			# Padding left of title: -height should come from font metrics of TITLE_FONT_TOP;
 			# 	but what about if the line wraps?
-			$title_frame->Frame(qw/-background white -width 30 -height 30/)->pack(qw/-fill x -anchor n -side left/);
+			$title_frame->Frame(qw/-background white -width 10 -height 30/)->pack(qw/-fill x -anchor n -side left/);
+			# The title frame content proper:
 			$title_frame->Label(
 				-justify => 'left', -anchor=> 'w', -wraplength=>$wrap,
 				-text=> $args->{-title},
 				-font=>'TITLE_FONT_TOP', -background=>"white",
-			)->pack(-side=>'top',-expand=>'1',-fill=>'x',-pady=>5,-padx=>5);
+			)->pack(-side=>'top',-expand=>1,-fill=>'x',-pady=>5,-padx=>0);
 		}
 		# Smaller text in top
 		if ($args->{-subtitle}){
 			# Indent the subtitle - see note above
-			$title_frame->Frame(qw/-background white -width 20 -height 12/)->pack(qw/-fill x -anchor w -side left/);
+			$title_frame->Frame(qw/-background white -width 10 -height 12/)->pack(qw/-fill x -anchor w -side left/);
 			$args->{-subtitle} =~ s/^[\n\r\f]//;
 			$args->{-subtitle} = $args->{-subtitle};
 			$title_frame->Label(
@@ -662,13 +676,13 @@ sub blank_frame { my ($self,$args) = (shift,{@_});
 		if ($args->{-text}){
 			$args->{-text} =~ s/^[\n\r\f]//;
 			$args->{-text} = "\n".$args->{-text};
-			$_ = $frame->Label(
+			my $p = $frame->Label(
 				-font => $args->{-font},
 				-justify => 'left',  -anchor=> 'w',
 				-wraplength => $wrap + 100,
 				-justify => "left", -text => $args->{-text}
 			)->pack(-side=>'top',-expand=>'1',-fill=>'x',-padx=>10);
-			$_->configure(-background => $main_bg) if $main_bg ;
+			$p->configure(-background => $main_bg) if $main_bg ;
 		}
 
 	}
@@ -676,42 +690,42 @@ sub blank_frame { my ($self,$args) = (shift,{@_});
 	# For wizards that are not 'top' style
 	else {
 		if ($args->{-title}){
-			$_ = $frame->Label(
+			my $p = $frame->Label(
 				-justify => 'left', -anchor=> 'w',
 				-wraplength=>$wrap, -text=>$args->{-title}, -font=>'TITLE_FONT',
 			)->pack(-anchor=>'n',-side=>'top',-expand=>1,-fill=>'x');
-			$_->configure(-background=>$main_bg) if $main_bg;
+			$p->configure(-background=>$main_bg) if $main_bg;
 		}
 		if ($args->{-subtitle}){
 			$args->{-subtitle} =~ s/^[\n\r\f]//;
 			$args->{-subtitle} = "\n".$args->{-subtitle};
-			$_ = $frame->Label(
+			my $p  = $frame->Label(
 				-font => $args->{-font},
 				-justify => 'left',
 				-anchor=> 'w',
 				-wraplength=>$wrap, qw/-justify left/, -text => $args->{-subtitle},
 			)->pack(-anchor=>'n',-side=>'top',-expand=>'1',-fill=>'x');
-			$_->configure(-background=>$main_bg) if $main_bg;
+			$p ->configure(-background=>$main_bg) if $main_bg;
 		} else {
 			$frame->Label(); # intended so we can packForget first to $frame->children;
 		}
 		if ($args->{-text}){
 			$args->{-text} =~ s/^[\n\r\f]//;
 			$args->{-text} = "\n".$args->{-text};
-			$_ = $frame->Label(
+			my $p = $frame->Label(
 				-font => $args->{-font},
 				-justify => 'left',
 				-anchor=> 'w',
 				-wraplength=>$wrap, qw/-justify left/, -text => $args->{-text},
 			)->pack(-anchor=>'n',-side=>'top',-expand=>'1',-fill=>'x');
-			$_->configure(-background=>$main_bg) if $main_bg;
+			$p->configure(-background=>$main_bg) if $main_bg;
 		} else {
 			$frame->Label(); # intended so we can packForget first to $frame->children;
 		}
 	}
-#	$_ = $frame->Frame->pack(qw/-anchor s -side bottom -fill both -expand 1/);
-#	$_->configure(-background => $frame->cget("-background") );
-#	$_->packPropagate(0);
+#	my $p = $frame->Frame->pack(qw/-anchor s -side bottom -fill both -expand 1/);
+#	$p->configure(-background => $frame->cget("-background") );
+#	$p->packPropagate(0);
 
 	if ($args->{-wait}){
 		$frame->after($args->{-wait},sub{$self->forward});
@@ -836,6 +850,14 @@ sub CancelButtonEventCycle { my ($self, $args) = (shift, @_);
 }
 
 
+
+=head1 CloseWindowEventCycle
+
+If this method recieves a true value from the C<-preCloseWindowAction> callback,
+the calling object's C<destroy> mehtod is called, by default closing the Wizard.
+
+=cut
+
 sub CloseWindowEventCycle { my ($self, $hGUI) = (shift,@_);
 	return if $self->Callback( -preCloseWindowAction => $self->{-preCloseWindowAction} );
 	$self->destroy;
@@ -845,7 +867,7 @@ sub CloseWindowEventCycle { my ($self, $hGUI) = (shift,@_);
 
 
 
-=head2 METHOD addDirSelectPage
+=head1 METHOD addDirSelectPage
 
 	$wizard->addDirSelectPage ( -variable => \$chosen_dir )
 
@@ -923,16 +945,17 @@ sub page_dirSelect { my ($self,$args) = (shift,shift);
 				$new_name =~ s/[\/\\]//g;
 				$new_name = ${$args->{-variable}} ."/$new_name";
 				if (! mkdir $new_name,0777){
+					my $msg;
 					if ($! =~ /Invalid argument/i){
-						$_ = "The directory name you supplied is not valid.";
+						$msg = "The directory name you supplied is not valid.";
 					} elsif ($! =~ /File Exists/i){
-						$_ = "A directory with that name already exists.";
+						$msg = "A directory with that name already exists.";
 					} else {
-						$_ = "The directory could not be created:\n\n\t'$!'"
+						$msg = "The directory could not be created:\n\n\t'$!'"
 					}
 					$self->parent->messageBox(
 						'-icon' => 'error', -type => 'ok',-title => 'Could Not Create Directory',
-						-message => $_,
+						-message => $msg,
 					);
 				} else {
 					${$args->{-variable}} = $new_name;
@@ -951,25 +974,25 @@ sub page_dirSelect { my ($self,$args) = (shift,shift);
 			},
 		)->pack( -side => 'right', -anchor => 'w', -padx=>'10', );
 	}
-	foreach (&$_drives){
-		($_) =~ /^(\w+:)/;
+	foreach my $d (&$_drives){
+		($d) =~ /^(\w+:)/;
 		if ($args->{-nowarnings} and ($args->{-nowarnings} eq "1"
 		or $^O !~ /MSWin32/i)){
-			$dirs->configure(-directory=>$_) if chdir  $_;
+			$dirs->configure(-directory=>$d) if chdir $d;
 		} elsif ($args->{-nowarnings}){
-			if ($DRIVETYPES{Win32API::File::GetDriveType($_)}
-			and chdir  $_){
-				$dirs->configure(-directory=>$_);
+			if ($DRIVETYPES{Win32API::File::GetDriveType($d)}
+			and chdir $d){
+				$dirs->configure(-directory=>$d);
 			}
 		} else {
-			$dirs->configure(-directory=>$_);
+			$dirs->configure(-directory=>$d);
 		}
 	}
 	return $frame;
 }
 
 
-=head2 CALLBACK callback_dirSelect
+=head1 CALLBACK callback_dirSelect
 
 A callback to check that the directory, passed as a reference in the sole
 argument, exists, and can and should be created.
@@ -1021,7 +1044,7 @@ sub callback_dirSelect { my ($self,$var) = (shift,shift);
 }
 
 
-=head2 METHOD addTaskListPage
+=head1 METHOD addTaskListPage
 
 Adds a page to the Wizard that will perform a series of tasks, keeping the user
 informed by ticking-off a list as each task is accomplished.
@@ -1072,7 +1095,7 @@ Optional: array-refernce to pass to the C<pack> method of the C<Frame> containin
 
 =back
 
-=head 2 TASK LIST EXAMPLE
+=head1 TASK LIST EXAMPLE
 
 	$wizard->addTaskListPage(
 		-title => "Toy example",
@@ -1089,7 +1112,7 @@ sub addTaskListPage { my ($self,$args) = (shift,{@_});
 }
 
 
-=head2 METHOD page_taskList
+=head1 METHOD page_taskList
 
 The same as C<addTaskListPage> (see L<METHOD addTaskListPage>)
 but does not add the page to the Wizard.
@@ -1143,11 +1166,11 @@ sub page_taskList { my ($self,$args) = (shift,shift);
 
 		foreach ( my $i=0; $i<=$#{$args->{-tasks}}; $i+=2 ){
 			my $icn="-1";
-			$_ = $task_frame->Frame()->pack(-side=>'top',-anchor=>"w");
+			my $p = $task_frame->Frame()->pack(-side=>'top',-anchor=>"w");
 			if (defined $args->{-todo_photo}){
-				$icn = $_->Label(-image=>"todo",-anchor=>"w")->pack(-side=>"left");
+				$icn = $p->Label(-image=>"todo",-anchor=>"w")->pack(-side=>"left");
 			}
-			$_->Label(-text=>@{$args->{-tasks}}[$i],-anchor=>"w")->pack(-side=>"left");
+			$p->Label(-text=>@{$args->{-tasks}}[$i],-anchor=>"w")->pack(-side=>"left");
 			push @tasks, [$icn,@{$args->{-tasks}}[$i+1]];
 		}
 	} else {
@@ -1251,21 +1274,26 @@ sub page_multiple_choice { my ($self,$args) = (shift,shift);
 }
 
 
-# Returns true if to continue
-# By default, may be called by close window or pressing cancel
+=head1 DIALOUGE_really_quite
+
+Returns true if we are to continue.
+By default, may be called by closing the Wizard's window or pressing C<CANCEL>.
+
+=cut
+
 sub DIALOGUE_really_quit { my $self = shift;
 	return 0 if $self->{nextButton}->cget(-text) eq $LABELS{FINISH};
 	unless ($self->{really_quit}){
 		my $button = $self->parent->messageBox('-icon' => 'question', -type => 'yesno',
-		-default => 'no', -title => 'Quit Setup?',
-		-message => "Setup has not finished installing.\n\nIf you quit now, you will not be able to run the software.\n\nDo you really wish to quit?");
+		-default => 'no', -title => 'Quit Wizard??',
+		-message => "The Wizard has not finished running.\n\nIf you quit now, the job will not be complete.\n\nDo you really wish to quit?");
 		$self->{really_quit} = lc $button eq 'yes'? 1:0;
 	}
 	return !$self->{really_quit};
 }
 
 
-=head2 DIALOGUE METHOD prompt
+=head1 DIALOGUE METHOD prompt
 
 Equivalent to the JavaScript method of the same name: pops up
 a dialogue box to get a text string, and returns it.  Arguemnts
@@ -1474,7 +1502,7 @@ aesthetics and/or architecture.
 
 =back
 
-=head1 NOTES ON SUB-CLASSING Tk::Wizard
+=head2 NOTES ON SUB-CLASSING Tk::Wizard
 
 If you are planning to sub-class C<Tk::Wizard> to create a different display style,
 there are three routines you will need to over-ride:

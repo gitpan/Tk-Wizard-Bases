@@ -2,9 +2,20 @@ CHANGES
 
 VERSION 1.040 UNRELEASED
 
+	*	Tk::Installer supports downloads; 
+	
+	*	-continue dropped for semmantically inverse but more apt -wait
+	
 	*	Tk::Wizard::Installer::Win32 uses Win32.pm falls back to Win32::OLE
 
 	*	Tk::Wizard - added -wait to blank_page
+	
+	*	First and last frames fill frame when -style=>top is specified
+	
+	*	DIALOGUE_really_quit referred to "Set Up" which wasn't very generic.
+		Now just refers to the wizard.
+		
+	*	Bug fixed for default -style.
 
 VERSION 1.038 11 April 2003
 

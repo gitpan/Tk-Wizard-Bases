@@ -1,6 +1,6 @@
 package Tk::Wizard::Installer::Win32;
 use vars qw/$VERSION/;
-$VERSION = 0.051;	# Added addStartMenuPage
+$VERSION = 0.07;	# Added addStartMenuPage - not on cpan
 
 BEGIN {
 	use Carp;
@@ -368,10 +368,13 @@ sub page_start_menu { my ($self) = (shift);
 	)->pack(qw/ -expand 1 -fill x -padx 10 -pady 10 /);
 
 	foreach my $i (@list){
-		unless ($listbox->info("exists", $i)){
-			$listbox->add( $i,
-				-text => ($i)=~m/([^\\\/]+)$/
-			) ;
+		#my ($t) = $i =~ m/([^\\\/]+)$/;
+		my $t = $i;
+		unless ($listbox->info("exists", $t)){
+			$listbox->add( $t,
+				-text => $t,
+				-data => $i,
+			);
 		}
 	}
 
@@ -552,6 +555,22 @@ sub callback_create_shortcuts { my $self = shift;
 
 
 
+=head1 DIALOUGE METHOD DIALOGUE_really_quit
+
+Refers to the Instllaer, rather than the Wizard.
+
+=cut
+
+sub DIALOGUE_really_quit { my $self = shift;
+	return 0 if $self->{nextButton}->cget(-text) eq $LABELS{FINISH};
+	unless ($self->{really_quit}){
+		my $button = $self->parent->messageBox('-icon' => 'question', -type => 'yesno',
+		-default => 'no', -title => 'Quit The Wizard?',
+		-message => "The Installer has not finished running.\n\nIf you quit now, the installation will be incomplete.\n\nDo you really wish to quit?");
+		$self->{really_quit} = lc $button eq 'yes'? 1:0;
+	}
+	return !$self->{really_quit};
+}
 
 
  1;

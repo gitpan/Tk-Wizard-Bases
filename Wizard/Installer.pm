@@ -1,6 +1,7 @@
 package Tk::Wizard::Installer;
+
 use vars qw/$VERSION/;
-$VERSION = 0.0212;	# why was adddirselectpage here?!
+$VERSION = 0.03;	# 29 May 2003
 
 =head1 NAME
 
@@ -9,6 +10,7 @@ Tk::Wizard::Installer - building-blocks for a software install wizard
 =cut
 
 BEGIN {
+	use strict;
 	use Carp;
 	use Cwd;
 	use File::Path;
@@ -17,7 +19,9 @@ BEGIN {
 	use Tk::Wizard;
 	use Tk::ProgressBar;
 	use Tk::LabFrame;
+	require Tk::ErrorDialog;
 	require Exporter;
+	use vars qw/@ISA @EXPORT/;
 	@ISA = "Tk::Wizard";
 	@EXPORT = ("MainLoop");
 }
@@ -33,7 +37,7 @@ my %LABELS = (
 	# licence agreement
 	LICENCE_ALERT_TITLE	=> "Licence Condition",
 	LICENCE_OPTION_NO	=> "I do not accept the terms of the licence agreement",
-	LICENCE_OPTION_YES	=> "I accept the terms the terms of the licence agreement",
+	LICENCE_OPTION_YES	=> "I accept the terms of the licence agreement",
 	LICENCE_IGNORED		=> "You must read and agree to the licence before you can use this software.\n\nIf you do not agree to the terms of the licence, you must remove the software from your machine.",
 	LICENCE_DISAGREED	=> "You must read and agree to the licence before you can use this software.\n\nAs you indicated that you do not agree to the terms of the licence, please remove the software from your machine.\n\nSetup will now exit.",
 
@@ -48,10 +52,8 @@ to automate software installation, primarily for end-users, in the manner
 of I<Install Sheild>.
 
 If you are looking for a freeware software installer that is not
-dependant upon Perl, try Inno Setup - C<http://www.jrsoftware.org/>. It's
+dependant upon Perl, try I<Inno Setup> - C<http://www.jrsoftware.org/>. It's
 so good, even Microsoft have been caught using it.
-
-Your contributions to extend it are more than welcome!
 
 =head1 DEPENDENCIES
 
@@ -61,8 +63,7 @@ Your contributions to extend it are more than welcome!
 
 =head1 DETAILS
 
-C<Tk::Wizard::Installer> supports of the methods and means of C<Tk::Wizard>
-(see L<Tk::Wizard>),
+C<Tk::Wizard::Installer> supports all the methods and means of L<Tk::Wizard|Tk::Wizard>
 plus those listed in the remainder of this document.
 
 =head1 METHOD addLicencePage
@@ -129,26 +130,32 @@ sub page_licence_agreement { my ($self,$licence_file) = (shift,shift);
 	$t->configure(-state => "disabled");
 	$t->pack(qw/-expand 1 -fill both -padx 10 /);
 	$frame->Frame(-height=>10)->pack();
-	$_ = $frame->Radiobutton(
+	my %opts1 = (
 		-font => $self->{defaultFont},
 		-text     => $LABELS{LICENCE_OPTION_YES},
 		-variable => \${$self->{licence_agree}},
 		-relief   => 'flat',
 		-value    => 1,
-		-underline => '2',
 		-anchor	=> 'w',
 		-background=>$self->cget("-background"),
-	)->pack(-padx=>$padx, -anchor=>'w',);
-	$frame->Radiobutton(
+	);
+	if ($^O !~ /(win32|cygwin)/i){
+		$opts1{-underline} = 2;
+	}
+	$frame->Radiobutton( %opts1 )->pack(-padx=>$padx, -anchor=>'w',);
+	my %opts2 = (
 		-font => $self->{defaultFont},
 		-text     => $LABELS{LICENCE_OPTION_NO},
 		-variable => \${$self->{licence_agree}},
 		-relief   => 'flat',
 		-value    => 0,
-		-underline => 5,
 		-anchor	=> 'w',
 		-background=>$self->cget("-background"),
-    )->pack(-padx=>$padx, -anchor=>'w',);
+	);
+	if ($^O !~ /(win32|cygwin)/i){
+		$opts2{-underline} = 5;
+	}
+    $frame->Radiobutton(%opts2)->pack(-padx=>$padx, -anchor=>'w',);
 	return $frame;
 }
 
@@ -184,12 +191,11 @@ sub callback_licence_agreement { my $self = shift;
 
 See L<TK::Wizard/METHOD adddirSelectPage>.
 
-
 =head1 METHOD addFileListPage
 
 	$wizard->addFileListPage ( name1=>value1 ... nameN=>valueN )
 
-Adds a page (C<Tk::Frame>) that contains a contains a progress bar
+Adds a page (C<Tk::Frame>) that a contains a progress bar
 (C<Tk::ProgressBar>) which is updated as a supplied list of files
 is copied or mvoed from one location to another.
 
@@ -249,10 +255,9 @@ Rerence to an array of locations to move/copy to
 
 Delay (in mS) before copying begins (see L<Tk::After>). Default is 1000.
 
-=item -continue
+=item -wait
 
-Display the next Wizard page once the job is done: invokes the callback
-of the I<Next> button at the end of the task.
+Prevents display of the next Wizard page once the job is done.
 
 =item -bar
 
@@ -344,7 +349,7 @@ sub page_fileList { my ($self,$args) = (shift,shift);
 
 		$self->{nextButton}->configure(-state=>"normal");
 		$self->{backButton}->configure(-state=>"normal");
-		$self->{nextButton}->invoke if $args->{-continue};
+		$self->{nextButton}->invoke unless $args->{-wait};
 	});
 	return $frame;
 }
@@ -449,6 +454,303 @@ sub install_files { my ($self,$args) = (shift,shift);
 	}
 	return $total+1;
 }
+
+
+=head1 DIALOUGE METHOD DIALOGUE_really_quit
+
+Called when the user tries to quit.
+As opposed to the base C<Wizard>'s dialouge of the same name,
+this dialogue refers to "the Instllaer", rather than "the Wizard".
+
+=cut
+
+sub DIALOGUE_really_quit { my $self = shift;
+	return 0 if $self->{nextButton}->cget(-text) eq $LABELS{FINISH};
+	unless ($self->{really_quit}){
+		my $button = $self->parent->messageBox('-icon' => 'question', -type => 'yesno',
+		-default => 'no', -title => 'Quit The Wizard?',
+		-message => "The Installer has not finished running.\n\nIf you quit now, the installation will be incomplete.\n\nDo you really wish to quit?");
+		$self->{really_quit} = lc $button eq 'yes'? 1:0;
+	}
+	return !$self->{really_quit};
+}
+
+
+
+
+=head1 addDownloadPage
+
+	$wizard->addDownloadPage ( name1=>value1 ... nameN=>valueN )
+
+Adds a page (C<Tk::Frame>) that will attempt to download specified
+files to specified locations, updating two progress bars in the
+process.
+
+If a file cannot be downloaded, the user will be prompted to try
+again. If the user sooner or later wishes to carry on even though
+a file has not downloaded, the the calling C<Wizard>'s C<-failed>
+slot is filled with the URIs of the files that could not be downloaded,
+and the supplied C<-on_error> argument comes into play - see below.
+If no C<-on_error> paramter is provided, the Wizard will continue.
+
+The I<Next> and I<Back> buttons of the Wizard are disabled whilst
+the download process takes place.
+
+=over 4
+
+=item -files
+
+A refernece to a hash, where keys are URIs and
+values are local locations to place the contents of those URIs.
+
+=item -wait
+
+If supplied, the frame will remain on the screen when the download
+is complete - default is to automate a click on the C<next> button
+once the downloads are completed without errors.
+
+=item -bar
+
+A list of properties to pass to the C<Tk::ProgessBar> object created and used
+in this routine. Assumes reasonable defaults.
+
+=item -on_error
+
+If a file cannot be downloaded and the user chooses not to keep trying,
+then this paramter comes into operation. If it is a reference, then it
+is assumed to be a code reference to execute; oftherwise a dialgoue box
+asks the user if they really wish to quit. If they do, then the
+C<CloseWindowEventCycle> (see L<Tk::Wizard/CloseWindowEventCycle>) - the
+default result of which is yet another confirmation of closure....
+
+If no C<-on_error> paramter is provided, the Wizard will continue.
+
+=back
+
+Would it be useful to impliment globbing for FTP URIs?
+
+=cut
+
+
+sub addDownloadPage { my ($self,$args) = (shift, {@_});
+	$self->addPage( sub { $self->page_download( $args )  } );
+}
+
+
+# See instasll_files and addFileListPage
+sub page_download{ my ($self,$args) = (shift,shift);
+	croak "Arguments should be supplied as a hash ref" if not ref $args or ref $args ne "HASH";
+	croak "-files is required" if not $args->{-files};
+	croak "-files should be a hash of uri => filepath pairs" if ref $args->{-files} ne 'HASH';
+	my @failed;
+	my $frame = $self->blank_frame(
+		-title => $args->{-title} || "Downloading Files" ,
+		-subtitle => $args->{-subtitle} || "Please wait whilst Setup downloads files to your computer.",
+		-text => $args->{-text} || "\n"
+	);
+
+	my %bar; # progress bar args
+	if (defined $args->{-bar}){
+		%bar = @{$args->{-bar}};
+		# insert error checking here...
+	}
+	$bar{-gap}	  = 0 unless defined $bar{-gap};
+	$bar{-blocks} = 0 unless defined $bar{-blocks};
+	$bar{-colors} = [0=>'blue'] unless $bar{-colors};
+	$bar{-borderwidth} = 2 unless $bar{-borderwidth};
+	$bar{-relief} = 'sunken' unless $bar{-relief};
+	$bar{-from}   = 0 unless $bar{-from};
+	$bar{-to}	  = 100 unless $bar{-to};
+
+	my $all = $frame->LabFrame(
+		-label => $args->{-label_all_files} || "Over-all Progress",
+		-labelside => "acrosstop"
+	);
+	$args->{-bar} = $all->ProgressBar( %bar )->pack(
+		qw/ -padx 20 -pady 10 -side top -anchor w -fill both -expand 1 /
+	);
+	$all->pack(qw/-fill x -padx 30/);
+
+	$args->{file_label} = $frame->LabFrame(
+		-label => $args->{-label_this_file} || "This FIle",
+		-labelside => "acrosstop"
+	);
+	$args->{-file_bar} = $args->{file_label}->ProgressBar( %bar )->pack(
+		qw/ -padx 20 -pady 10 -side top -anchor w -fill both -expand 1 /
+	);
+	$args->{file_label}->pack(qw/-fill x -padx 30/);
+
+	$args->{-bar}->after ( $args->{-delay} || 10, sub {
+		$self->{nextButton}->configure(-state=>"disable");
+		$self->{backButton}->configure(-state=>"disable");
+
+		require LWP::UserAgent;
+		require HTTP::Request;
+
+		while (scalar keys %{$args->{-files}}>0){
+
+			$args->{file_label}->configure(-label=>'Preparing to download...');
+			$args->{file_label}->update;
+			$args->{-bar}->configure( -to => scalar keys %{$args->{-files}} );
+			$args->{-bar}->value(0);
+
+			foreach my $uri (keys %{$args->{-files}} ){
+				my ($uri_msg) = $uri =~ m/^\w+:\/{2,}[^\/]+(.*?)\/?$/;
+				$args->{file_label}->configure(-label=> $uri_msg || "Current File");
+				$args->{file_label}->update;
+				if ($self->read_uri (
+					bar		=> $args->{-file_bar},
+					uri		=> $uri,
+					target	=> $args->{-files}->{$uri},
+				)){
+					delete $args->{-files}->{$uri};
+				}
+				$args->{-bar}->value( $args->{-bar}->value +1 );
+				$args->{-bar}->update;
+				$args->{-file_bar}->configure(-to => 0);
+				$args->{-file_bar}->value(0);
+				$args->{-file_bar}->update;
+			}
+
+			if (scalar keys %{$args->{-files}}>0){
+				unless ($self->download_again(scalar keys %{$args->{-files}})){
+					$self->{-failed} = $args->{-files};
+					$args->{-files} = {};
+				}
+			}
+		}
+
+		if (scalar keys %{$self->{-failed}}>0
+		and $args->{-on_error}){
+			if ( ref $args->{-on_error} eq 'CODE'){
+				&{ $args->{-on_error} }
+			} else {
+				$self->download_quit( scalar keys %{$self->{-failed}} );
+			}
+		}
+
+		$self->{nextButton}->configure(-state=>"normal");
+		$self->{backButton}->configure(-state=>"normal");
+		$self->{nextButton}->invoke unless $args->{-wait};
+	});
+
+	return $frame;
+}
+
+
+
+
+
+# c/o PPM.pm
+sub read_uri { my ($self,$args) = (shift,{@_});
+    carp "Require uri param" unless defined $args->{uri};
+    carp "Require target param" unless defined $args->{target};
+    my ($proxy_user, $proxy_pass);
+	($self->{response}, $self->{bytes_transferred},$self->{errstr}) = (undef, 0, undef);
+
+    my $ua = new LWP::UserAgent;
+    $ua->agent($ENV{HTTP_proxy_agent} || ("$0/$VERSION " . $ua->agent));
+
+    if (defined $args->{proxy}){
+        $proxy_user = $args->{http_proxy_user};
+        $proxy_pass = $args->{http_proxy_pass};
+        warn ("read_uri: calling env_proxy: $args->{http_proxy}") if $^W;
+        $ua->env_proxy;
+	} elsif (defined $ENV{HTTP_proxy}) {
+        $proxy_user = $ENV{HTTP_proxy_user};
+        $proxy_pass = $ENV{HTTP_proxy_pass};
+        warn ("read_uri: calling env_proxy: $ENV{HTTP_proxy}") if $^W;
+        $ua->env_proxy;
+    }
+
+    my $req = HTTP::Request->new(GET,$args->{uri});
+    if (defined $proxy_user and defined $proxy_pass) {
+        warn ("read_uri: calling proxy_authorization_basic($proxy_user, $proxy_pass)") if $^W;
+        $req->proxy_authorization_basic($proxy_user, $proxy_pass);
+    }
+
+	# set the progress bar
+
+	# update the progress bar
+ 	($self->{response}, $self->{bytes_transferred}) = (undef, 0);
+	$self->{response} = $ua->request(
+		$req,
+		sub { &lwp_callback($args->{bar},@_) },
+		, 4096
+	);
+
+	if ($self->{response} && $self->{response}->is_success) {
+		my ($dirs,$file) = $args->{target} =~ /^(.*?)([^\\\/]+)$/;
+		if ($dirs and $dirs!~/^\.{1,2}$/ and !-d $dirs){
+			mkpath $dirs or croak "Could not make path $d : $!";
+		}
+		unless (open OUT, ">$args->{target}") {
+			warn ("read_uri: Couldn't open $args->{target} for writing") if $^W;
+			$self->{errstr} = "Couldn't open $args->{target} for writing\n";
+			return;
+		}
+		warn "Writing to $args->{target}...\n" if $^W;
+		binmode OUT;
+		print OUT $self->{response}->content;
+		close OUT;
+        return 1;
+    }
+    if ($self->{response}) {
+        warn ("read_uri: Error(1) reading $args->{uri}: ".$self->{response}->code." ".
+            $self->{response}->message) if $^W;
+        $self->{errstr} = "Error(1) reading $args->{uri}: ".$self->{response}->code. " " .
+            $self->{response}->message . "\n";
+    }
+    else {
+        warn ("read_uri: Error(2) reading $args->{uri} ") if $^W;
+        $self->{errstr} = "Error(2) reading $args->{uri} 	\n";
+    }
+    return 0;
+}
+
+
+# c/o PPM.pm
+sub lwp_callback {
+	local $length;
+	my ($bar, $data, $res, $protocol) = @_;
+	$bar->configure( -to => $res->header('Content-Length') );
+#	$bar->configure(-to => $res->{_headers}->content_length);
+	$bar->value( $bar->value + length $data );
+	$bar->update;
+    $self->{response} = $res;
+    $self->{response}->add_content($data);
+    $self->{bytes_transferred} += length $data;
+}
+
+
+sub download_again { my ($self,$failed) = (shift,shift);
+	my $button = $self->parent->messageBox(
+		'-icon' => 'question',
+		-type => 'yesno',
+		-default => 'yes',
+		-title => 'File Download',
+		-message => $failed." file".($failed!=1?"s":"")." were not downloaded.\n\nWould you like to try again?",
+	);
+	return lc $button eq 'yes'? 1:0;
+}
+
+sub download_quit { my ($self,$failed) = (shift,shift);
+	my $button = $self->parent->messageBox(
+		'-icon' => 'error',
+		-type => 'yesno',
+		-default => 'no',
+		-title => 'Abort Installation?',
+		-message => "Without downloading the remaining $failed file"
+		.($failed!=1?"s":"")
+		.", the Installer cannot complete the installation.
+
+		Should the Installation process be aborted?",
+	);
+	if (lc $button eq 'yes'){
+		$self->CloseWindowEventCycle
+	}
+}
+
 
 1;
 __END__
