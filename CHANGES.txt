@@ -1,0 +1,106 @@
+CHANGES
+
+VERSION 1.037 08 April 2003
+
+	*	Added addStartMenuPage to Tk::Wizard::Installer::Win32
+
+	*	Added -tag_text to Tk::Wizard
+
+	*	Removed BACK and CANCEL buttons from Finish page.
+
+VERSION 1.036 04 April 2003
+
+	*	New page type, text_frame via addTextFrame.
+
+	*	New page type, multiple choice.
+
+VERSION 1.035 02 April 2003
+
+	*	-nohelpbutton bug now corrected
+
+	*	-continue now works for empty task lists
+		(previously it asked for a key to be pressed)
+
+VERSION 1.034 21 January 2003
+
+	*	Typed = instead of =~, resulting in
+		incomplete dir listings in DirTrees.
+
+VERSION 1.033 20 January 2003
+
+	*	Fixed lack of require of File::Path
+
+VERSION 1.032
+
+	*	Added &forward> and &backward, mainly to automate tests.
+
+	*	Added -continue method to &Tk::Wizard::Installer::addFileListPage
+		and &Tk::Wizard::addTaskListPage.
+
+VERSION 1.031
+
+	*	Added method &addTaskListPage (etc) to Tk::Wizard;
+
+	*	Added -resizable switch; added warnings in addPage.
+
+	*	Added method &addFileListPage (etc) to Tk::Wizard::Installer
+
+VERSION 1.03
+
+	*	Added basic tests/examples using Test::Harness.
+
+	*	Re-arranged buttons so CANCEL is in most accessible place;
+		added button spacing
+
+	*	Some more error checking
+
+	*   Implimented as a Tk "composite" widget, based on
+		"Tk::MainWindow".
+
+	*   Removed licence method to Tk::Wizard::Installer
+		and the Windows' registry method to Tk::Wizard::Installer::Win32.
+
+	*   Added "-nowarnings" to "addDirSelectPage" method.
+
+	*   Solaris "SystemButtonFace" resolved with little satisfaction to
+		a pre-defined colour.
+
+VERSION 1.021
+
+	*   More minor display tweeks.
+
+	*   Added internationalisation of button labels.
+
+VERSION 1.02
+
+	*   All known display issues fixed.
+
+	*   Warnings about stupid things if run undef "-w".
+
+	*   Directory selection method cleaned, fixed and extended.
+
+	*   "-style="top> implimented.
+
+	*   Windows "uninstall" feature: thanks to James Tillman and Paul
+		Barker for info.
+
+VERSION 1.01
+
+	*   Added method "blank_frame" that can take title and standfirst
+		text.
+
+	*   Added licence agreement bits.
+
+	*   Modified spacing, added default font and background; changed
+		"filename" field to "-imagepath" for readability; made all
+		arguments begin with "-" to fit in with Tk "switches"; made the
+		supply of a "MainWindow" to the constructor optional, and
+		changed the supply method from a reference to part of the passed
+		name/value list.
+
+VERSION 1.0
+
+	Initial version by Daniel T Hable, found with Google, at
+	http://perlmonks.thepen.com/139336.html.
+
+#
