@@ -1,7 +1,7 @@
 package Tk::Wizard::Installer;
 
 use vars qw/$VERSION/;
-$VERSION = 0.03;	# 29 May 2003
+$VERSION = 0.041;	# 08 August 2003, 29 May 2003
 
 =head1 NAME
 
@@ -591,10 +591,11 @@ sub page_download{ my ($self,$args) = (shift,shift);
 
 			$args->{file_label}->configure(-label=>'Preparing to download...');
 			$args->{file_label}->update;
-			$args->{-bar}->configure( -to => scalar keys %{$args->{-files}} );
 			$args->{-bar}->value(0);
+			$args->{-bar}->configure( -to => scalar keys %{$args->{-files}} );
 
 			foreach my $uri (keys %{$args->{-files}} ){
+				warn "Try $args->{-files}->{$uri}\n" if $^W;
 				my ($uri_msg) = $uri =~ m/^\w+:\/{2,}[^\/]+(.*?)\/?$/;
 				$args->{file_label}->configure(-label=> $uri_msg || "Current File");
 				$args->{file_label}->update;
@@ -613,7 +614,9 @@ sub page_download{ my ($self,$args) = (shift,shift);
 			}
 
 			if (scalar keys %{$args->{-files}}>0){
+				warn "Files left: ",(scalar keys %{$args->{-files}}),"\n" if $^W;
 				unless ($self->download_again(scalar keys %{$args->{-files}})){
+					warn "Not trying again.\n" if $^W;
 					$self->{-failed} = $args->{-files};
 					$args->{-files} = {};
 				}
@@ -622,11 +625,20 @@ sub page_download{ my ($self,$args) = (shift,shift);
 
 		if (scalar keys %{$self->{-failed}}>0
 		and $args->{-on_error}){
+			warn "Failed." if $^W;
 			if ( ref $args->{-on_error} eq 'CODE'){
+				warn "Calling -on_error handler." if $^W;
 				&{ $args->{-on_error} }
 			} else {
+				warn "Calling self/download_quit." if $^W;
 				$self->download_quit( scalar keys %{$self->{-failed}} );
 			}
+		} else {
+			warn "Failures: ",scalar keys %{$self->{-failed}},"\n";
+			foreach (keys %{$self->{-failed}}){
+				warn "\t$_\n" if $^W;
+			}
+			$self->{-failed} = 0;
 		}
 
 		$self->{nextButton}->configure(-state=>"normal");

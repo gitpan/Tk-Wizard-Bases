@@ -1,7 +1,7 @@
 CHANGES
 
-VERSION 1.040 UNRELEASED
-
+VERSION 1.06 
+	
 	*	Tk::Installer supports downloads; 
 	
 	*	-continue dropped for semmantically inverse but more apt -wait

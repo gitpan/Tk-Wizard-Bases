@@ -30,10 +30,10 @@ if ($^O =~ m/(mswin32|cygwin)/i){
 	}
 }
 WriteMakefile(
-    'ABSTRACT'	=> 'Create wizards with Perl TK.',
+    'ABSTRACT'	=> 'Create wizards with Perl-TK',
     'DISTNAME'	=> 'Tk-Wizard-Bases',
     'NAME'		=> 'Tk::Wizard',
-    'VERSION'	=> 1.05,
+    'VERSION'	=> 1.06,
     #'VERSION_FROM'	=> 'Wizard.pm', # finds $VERSION
     'PREREQ_PM'		=> $prereq,
     ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
