@@ -1,0 +1,17 @@
+# http://module-build.sourceforge.net/META-spec.html
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         Tk-Wizard-Bases
+version:      1.07
+version_from: 
+installdirs:  site
+requires:
+    File::Path:                    0.1
+    Tk:                            0.1
+    Tk::LabFrame:                  0.1
+    Tk::ProgressBar:               0.1
+    Win32:                         0.2
+    Win32::Shortcut:               0.03
+    Win32::TieRegistry:            0.1
+
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version 6.25

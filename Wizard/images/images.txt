@@ -1,3 +1,0 @@
-These are apparently public source.
-Some come from Inno Setup, some are hand-made by the author.
-See POD for details of where to get more.

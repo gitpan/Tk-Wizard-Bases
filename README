@@ -1,34 +1,12 @@
-Tk/Wizard - Wizard GUI Framework - Version 1.036
-================================================
-
-VERSION 1.036 04 April 2003
-	*	New page type, text_frame via addTextFrame.
-	*	New page type, multiple choice.
-
-VERSION 1.035 02 April 2003
-	*	-nohelpbutton bug now corrected
-	*	-continue now works for empty task lists
-		(previously it asked for a key to be pressed)
-
-VERSION 1.034 21 January 2003
-	*	Typed = instead of =~, resulting in
-		incomplete dir listings in DirTrees.
-
-VERSION 1.033 20 January 2003
-	*	Fixed lack of require of File::Path
-
-VERSION 1.032
-	*	Added &forward> and &backward, mainly to automate tests.
-	*	Added -continue method to &Tk::Wizard::Installer::addFileListPage
-		and &Tk::Wizard::addTaskListPage.
+Tk/Wizard - Wizard GUI Framework - Release 1.07
+===============================================
 
 INSTALLATION
 
 To install this module type the following:
 
    perl Makefile.PL
-   make
-   make test
+   make all test
    make install
 
 Be careful with the tests: some are currently interactive.
@@ -46,13 +24,13 @@ based upon it.
 The wizard feel is largly based upon the Microsoft(TM,etc) wizard style:
 the default is simillar to that found in Microsoft Windows 95; a more
 Windows 2000-like feel is also supported (see the "-style" entry in
-"WIDGET-SPECIFIC OPTIONS". Sub-classing the module to provide different
+"WIDGET-SPECIFIC OPTIONS". Subclassing the module to provide different
 look-and-feel is highly encourage: please see "NOTES ON SUB-CLASSING
 Tk::Wizard".
 
 NB: THIS IS AN ALPHA RELEASE: ALL CONTRIBUTIONS ARE WELCOME!
 
-Please also see "IMPLIMENTATION NOTES".
+Please also see "IMPLEMENTATION NOTES".
 
 STANDARD OPTIONS
 	-title -background -width -height
@@ -142,11 +120,11 @@ must preced the "MainLoop" call.
 
 METHOD forward
 Convenience method to move the Wizard on a page by invoking the callback
-for the "nextBUtton".
+for the "nextButton".
 
 METHOD backward
 Convenience method to move the Wizard back a page by invoking the
-callback for the "backBUtton".
+callback for the "backButton".
 
 METHOD currentPage
 		my $current_page = $wizard->currentPage()
@@ -324,7 +302,7 @@ ACTION EVENT HANDLERS
 	via *Back* and *Next* buttons, as well as *Help*, *Cancel* and
 	*Finish* buttons.
 
-	In the "Tk::Wizard" implimentation, each button has associated with
+	In the "Tk::Wizard" implementation, each button has associated with
 	it one or more action event handlers, supplied as code-references
 	executed before, during and/or after the button press.
 
@@ -385,7 +363,7 @@ BUTTONS
 			backButton nextButton helpButton cancelButton
 
 	If you must, you can access the Wizard's button through the object
-	fields listed above, each of which represents a "Tk::BUtton" object.
+	fields listed above, each of which represents a "Tk::Button" object.
 	Yes, this is not a good way to do it: patches always welcome ;)
 
 	This is not advised for anything other than disabling or re-enabling
@@ -408,8 +386,8 @@ INTERNATIONALISATION
 	The text of the callbacks can also be changed via the %LABELS hash:
 	see the top of the source code for details.
 
-IMPLIMENTATION NOTES
-	This widget is implimented using the Tk 'standard' API as far as
+IMPLEMENTATION NOTES
+	This widget is implemented using the Tk 'standard' API as far as
 	possible, given my almost three weeks of exposure to Tk. Please, if
 	you have a suggestion, or patch, send it to me directly:
 	"LGoddard@CPAN.org".
@@ -423,7 +401,7 @@ IMPLIMENTATION NOTES
 	appreciated.
 
 	There is one outstanding bug which came about when this Wizard was
-	translated from an even more naive implimentation to the
+	translated from an even more naive implementation to the
 	more-standard manner. That is: because "Wizard" is a sub-class of
 	"MainWIndow", the "-background" is inacessible to me. Advice and/or
 	patches suggestions much appreciated.
@@ -438,7 +416,7 @@ THE Tk::Wizard NAMESPACE
 		the basic services and components a Wizard might require.
 
 	2   That modules beneath the base in the hierachy provide
-		implimentations based on aesthetics and/or architecture.
+		implementations based on aesthetics and/or architecture.
 
 NOTES ON SUB-CLASSING Tk::Wizard
 	If you are planning to sub-class "Tk::Wizard" to create a different
@@ -468,6 +446,27 @@ CAVEATS / BUGS / TODO
 
 CHANGES
 	Please see the file CHANGES.txt included with the distribution.
+
+VERSION 1.036 04 April 2003
+	*	New page type, text_frame via addTextFrame.
+	*	New page type, multiple choice.
+
+VERSION 1.035 02 April 2003
+	*	-nohelpbutton bug now corrected
+	*	-continue now works for empty task lists
+		(previously it asked for a key to be pressed)
+
+VERSION 1.034 21 January 2003
+	*	Typed = instead of =~, resulting in
+		incomplete dir listings in DirTrees.
+
+VERSION 1.033 20 January 2003
+	*	Fixed lack of require of File::Path
+
+VERSION 1.032
+	*	Added &forward> and &backward, mainly to automate tests.
+	*	Added -continue method to &Tk::Wizard::Installer::addFileListPage
+		and &Tk::Wizard::addTaskListPage.
 
 AUTHOR
 	Lee Goddard (lgoddard@cpan.org) based on work Daniel T Hable.
@@ -507,6 +506,3 @@ COPYRIGHT
 	THIS SOFTWARE IS NOT ENDORSED BY THE MICROSOFT CORP
 
 	MICROSOFT IS A REGISTERED TRADEMARK OF MICROSOFT CROP.
-
-
-Tool completed successfully

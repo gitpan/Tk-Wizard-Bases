@@ -1,3 +1,44 @@
+2005-03-11  Kingpin  <mthurn@verizon.net>
+
+	* lib/Tk/Wizard.pm (Show, render_current_page): BUGFIX for DirSelectPage leaving Cwd in an unknown place
+	* lib/Tk/Wizard.pm: FIX all typos in pod
+
+2005-02-11  Kingpin  <mthurn@verizon.net>
+
+	* lib/Tk/Wizard.pm (page_dirSelect): FIX: if caller dictates height, expand widgets to fit
+
+2005-02-10  Kingpin  <mthurn@verizon.net>
+
+	* lib/Tk/Wizard.pm (blank_frame): BUGFIX: top image had wrong bgcolor
+
+2005-02-10  Kingpin  <mthurn@verizon.net>
+
+	* lib/Tk/Wizard.pm (Populate): BUGFIX: -imagepath instead of -topimagepath in 2 places
+
+2005-02-03  Kingpin  <mthurn@verizon.net>
+
+	* lib/Tk/Wizard.pm (Populate): FIX for some widgets having wrong bgcolor
+
+2005-02-02  Kingpin  <mthurn@verizon.net>
+
+	* lib/Tk/Wizard.pm (page_dirSelect): clean up extraneous hardcoded references to %ENV
+
+2005-02-02  Kingpin  <mthurn@verizon.net>
+
+	* lib/Tk/Wizard.pm (page_dirSelect): BUGFIX: missing '-' in front of 'command'
+
+2005-02-01  Kingpin  <mthurn@verizon.net>
+
+	* lib/Tk/Wizard.pm (Populate): cleaned up the "tag text" (still not perfect, but better)
+
+2005-02-01  Kingpin  <mthurn@verizon.net>
+
+	* lib/Tk/Wizard.pm (_font_family): more flexible font handling; better default fonts on Unix
+
+2005-02-01  Kingpin  <mthurn@verizon.net>
+
+	* lib/Tk/Wizard.pm (Populate): images are found in sitelibexp, not installsitearch
+
 CHANGES
 
 VERSION 1.06 

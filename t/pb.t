@@ -1,42 +1,41 @@
 #! perl -w
-our $VERSION = 0.1;	# 29 November 2002 14:39 CET
+
+my $VERSION = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+
+use Cwd;
+use ExtUtils::testlib;
+use Test::More no_plan;
 
 use strict;
-use Cwd;
 
-print "1..5\n";
-
-use Tk::Wizard;
-use Tk::ProgressBar;
-print "ok 1\n";
-
+BEGIN { use_ok('Tk::Wizard') };
+BEGIN { use_ok('Tk::ProgressBar') };
 
 our ($PB);	# Index number of page
 our $bar;	# Progress bar
 
 my $wizard = new Tk::Wizard(
-	-title => "ProgressBar Test",
-	-imagepath => "./Wizard/images/wizard_blue.gif",
-	-style	=> 'top',
-	-topimagepath => "./Wizard/images/wizard_blue_top.gif",
-);
-print ref $wizard eq "Tk::Wizard"? "ok 2\n" : "not ok 2\n";
+                            -title => "ProgressBar Test",
+                            -imagepath => "./Wizard/images/wizard_blue.gif",
+                            -style	=> 'top',
+                            -topimagepath => "./Wizard/images/wizard_blue_top.gif",
+                           );
+isa_ok($wizard, "Tk::Wizard");
 $wizard->configure(
-	-postNextButtonAction => sub { &postNextButtonAction($wizard) },
-	-preNextButtonAction => sub { &preNextButtonAction($wizard) },
-	-finishButtonAction  => sub { print "ok 4\n";  $wizard->destroy;},
-);
-print ref $wizard->cget(-preNextButtonAction) eq "CODE"? "ok 3\n":"not ok 3\n";
+                   -postNextButtonAction => sub { &postNextButtonAction($wizard) },
+                   -preNextButtonAction => sub { &preNextButtonAction($wizard) },
+                   -finishButtonAction  => sub { ok(1);  $wizard->destroy;},
+                  );
+isa_ok($wizard->cget(-preNextButtonAction), "CODE");
 
-$wizard->addPage( sub{ page_splash ($wizard)} );
+is(1, $wizard->addPage( sub{ page_splash ($wizard)} ));
 $PB = $wizard->addPage( sub{ pb($wizard) });
-$wizard->addPage (sub{page_finish($wizard)} );
+is(2, $PB);
+is(3, $wizard->addPage (sub{page_finish($wizard)} ));
 $wizard->Show;
 MainLoop;
-print "ok 5\n";
-
+ok(1);
 exit;
-
 
 sub page_splash { my $wizard = shift;
 	my $frame = $wizard->blank_frame(-title=>"Welcome to the Wizard Test 'pb'",
@@ -63,11 +62,13 @@ sub pb { my $wizard = shift;
 		-text=>"The bar should fill, thanks to calling the 'update' method upon the Wizard, "
 		."and the Next button should only become available when the job is done."
 	);
+         # $frame->configure(-bg => 'magenta'); # for debugging
 	$bar = $frame->ProgressBar(
-		-colors=>[0=>'yellow'],
-		-borderwidth => 2, -relief => 'sunken',
-		-from => 0,	-to => 10,
-	)->pack( -padx => 10, -pady => 10, -side => 'top', -fill => 'both', -expand => 1 )->pack;
+                                   -colors=>[0=>'yellow'],
+                                   -borderwidth => 2, -relief => 'sunken',
+                                   -from => 0,	-to => 10,
+                                   -height => 15,
+	)->pack( -padx => 10, -pady => 10, -side => 'top', -fill => 'x', -expand => 1 );
 	return $frame;
 }
 
@@ -93,3 +94,4 @@ sub postNextButtonAction { my $wizard = shift;
 
 
 __END__
+
