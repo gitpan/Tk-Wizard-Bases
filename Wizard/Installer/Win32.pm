@@ -1,18 +1,25 @@
 package Tk::Wizard::Installer::Win32;
 use vars qw/$VERSION/;
-$VERSION = 0.04;	# Added addStartMenuPage
+$VERSION = 0.051;	# Added addStartMenuPage
 
 BEGIN {
 	use Carp;
 	use Tk::Wizard::Installer;
+	use Win32::Shortcut;
+	use File::Path;
 	require Exporter;
 	@ISA = "Tk::Wizard::Installer";
 	@EXPORT = ("MainLoop");
-}
+	use Cwd;
+	require Win32;
+	if ($Win32::VERSION lt 0.2){
+		eval 'use Win32::OLE'; # autouse is still not very good?
+		die "Could not load Win32::OLE: $@" if $@;
+	}
+	use Win32;
+	use Win32::TieRegistry( Delimiter=>"/", ArrayValues=>0 );
 
-use Cwd;
-use Win32::OLE;
-use Win32::TieRegistry( Delimiter=>"/", ArrayValues=>0 );
+}
 
 
 =head1 NAME
@@ -39,9 +46,10 @@ used to add new, persistant environment variables to the system.
 	Tk::Wizard
 	Tk::Wizard::Installer
 	Win32::TieRegistry
-	HLIST
-	Win32::OLE;
-	Windows Scripting Host (for want of a better idea)
+	Tk::Hlist
+	Win32
+	Win32::Shortcut
+	File::Path
 
 =head1 METHODS
 
@@ -178,14 +186,15 @@ sub register_with_windows { my ($self,$args) = (shift,{@_});
 }
 
 
-=head1 METHOD addStartMenuPage
+=head1 METHOD page_start_menu
 
 Returns a page (a filled C<Tk::Frame> object) that allows
 users to select a location on the Windows "Start Menu",
 perhaps to add a shortcut there.
 
 This routine does not currently create the directory in the
-I<Start Menu>, nor does it place a link there. Rather, the
+I<Start Menu>, nor does it place a link there - see
+L</CALLBACK callback_create_shortcut> for that. Rather, the
 caller supplies a C<-variable> paramter that is a reference
 to a scalar which, once the page is 'run', will contain
 either the path to the user's chosen directory, or C<undef>
@@ -212,14 +221,17 @@ takes precedence.
 
 =item -variable
 
-The directory the user has chosen to create an item in. Note
+A reference to a variable that, when the page is completed,
+will contain the directory the user has chosen to create an item in. Note
 this is I<not> the full path: see above.
 
-=item -append
+=item -program_group
 
-If this parameter evaluates to true, the name of the
-directory defined by C<-variable> will be appended to any selection
-made by the user.
+Name of the directory to create on the start menu, if any.
+If defined, this will be appended to any selection the user makes.
+Since this is just the GUI part, no directory will actually be
+created until C<callback_create_shortcut> is called (though this will
+change).
 
 =item -disable_nochoice
 
@@ -252,21 +264,32 @@ You can supply the common Wizard page options:
 
 	-title -subtitle -text
 
+This method will initially attempt to use F<Win32.pm>; failing
+that, it will attempt to use a Windows Scripting Host object
+created via C<Win32::OLE>. If both fail (WSH only existing by
+default in Win98 and above), the routine will return C<undef>,
+rather than a page frame object. This may not be ideal but works
+for me - suggestions welcomed for a better idea.
+
 =cut
 
-sub addStartMenuPage { my ($self,$args) = (shift,{@_});
-	return $self->addPage( sub { $self->page_start_menu($args)  } );
-}
+#sub addStartMenuPage { my ($self,$args) = (shift,{@_});
+#	return $self->addPage( sub { $self->page_start_menu($args)  } );
+#}
 
 
-sub page_start_menu { my ($self,$args) = (shift,shift);
+sub page_start_menu { my ($self) = (shift);
+	if (ref $_[0] eq 'HASH'){
+		$args = shift
+	} else {
+		$args = {@_};
+	}
 	local *DIR;
 	my (@list,$dir);
-	my $append;
-	my $WshShell = Win32::OLE->CreateObject("WScript.Shell");
 	my $cwd = cwd;
 	my $do_set = 1;
-	confess "You must set -variable parameter" unless exists $args->{-variable};
+	croak "You must set -variable parameter"
+		unless exists $args->{-variable};
 	$args->{-background} = 'white' unless exists $args->{-background};
 	$args->{-relief} = 'sunken' unless exists $args->{-relief};
 	$args->{-border} = 1 unless exists $args->{-border};
@@ -274,8 +297,9 @@ sub page_start_menu { my ($self,$args) = (shift,shift);
 	$args->{-title} = "Create Shortcuts" unless exists  $args->{-title};
 	$args->{-subtitle} = "Please select where to place an icon on the start menu" unless exists  $args->{-subtitle};
 	$args->{-label_nochoice} = "Do not create a shortcut on the Start Menu" unless exists $args->{-label_nochoice};
+	$self->{-program_group} = $args->{-program_group};
 
-	my $common_args;
+	my $common_args; # formatting
 	$common_args->{-background} = $args->{-background} if exists $args->{-background};
 	$common_args->{-relief} = $args->{-relief} if exists $args->{-relief};
 	$common_args->{-highlightthickness} = $args->{-highlightthickness} if exists $args->{-highlightthickness};
@@ -284,16 +308,34 @@ sub page_start_menu { my ($self,$args) = (shift,shift);
 	$common_args->{-highlightcolor} = $args->{-highlightcolor} if exists $args->{-highlightcolor};
 	$common_args->{-foreground} = $args->{-foreground} if exists $args->{-foreground};
 	$common_args->{-font} = $args->{-font} if exists $args->{-font};
-
+	# Don't pass these to other modules
 	my $variable = $args->{-variable};
 	delete $args->{-variable};
-
-	$append = $$variable if $args->{-append};
+	my $group = $args->{-program_group};
+	delete $args->{-program_group};
 
 	my $frame = $self->blank_frame(%$args);
 
-	$self->{startmenu_dir_current} = $WshShell->SpecialFolders(17);
-	$self->{startmenu_dir_common}  = $WshShell->SpecialFolders(2);
+	if ($Win32::VERSION gt 0.1999999){
+		$self->{startmenu_dir_current} =
+			eval('Win32::GetFolderPath(Win32::CSIDL_STARTMENU)')
+			. '\Programs';
+		$self->{startmenu_dir_common}  =
+			eval('Win32::GetFolderPath(Win32::CSIDL_COMMON_STARTMENU)')
+			. '\Programs';
+	}
+	# The above may not work if non-standard/non-English setup, so:
+	if (not $self->{startmenu_dir_current}
+	or not $self->{startmenu_dir_common}){
+		my $WshShell = eval 'Win32::OLE->CreateObject("WScript.Shell")';
+		if (ref $WshShell eq 'Win32::OLE'){
+			$self->{startmenu_dir_current} = $WshShell->SpecialFolders(17);
+			$self->{startmenu_dir_common}  = $WshShell->SpecialFolders(2);
+		} else {
+			warn "Could not find special folders using Win32 or OLE!";
+			return undef;
+		}
+	}
 	if ($args->{-user} eq 'current'){
 		$dir = [$self->{startmenu_dir_current}];
 	} elsif ($args->{-user} eq 'all') {
@@ -304,6 +346,7 @@ sub page_start_menu { my ($self,$args) = (shift,shift);
 			$self->{startmenu_dir_current}
 		];
 	}
+	$$variable = @$dir[0]."\\".$group;
 	foreach my $dodir (@$dir){
 		chdir $dodir;
 		opendir DIR,$dodir or croak "I couldn't open the start menu ($dodir)";
@@ -319,7 +362,7 @@ sub page_start_menu { my ($self,$args) = (shift,shift);
 		-separator  => '',
 		-browsecmd	=> sub {
 			$$variable = shift;
-			$$variable .= "\\".$append if $append;
+			$$variable .= "\\".$group if $group;
 		},
 		%$common_args
 	)->pack(qw/ -expand 1 -fill x -padx 10 -pady 10 /);
@@ -340,7 +383,6 @@ sub page_start_menu { my ($self,$args) = (shift,shift);
 	)->pack(
 		-side=>'top',-anchor=>'w',-expand=>1,-fill=>"x", -padx=>10,
 	);
-
 	my $button;
 
 	unless ($args->{-disable_nochoice}){
@@ -355,7 +397,7 @@ sub page_start_menu { my ($self,$args) = (shift,shift);
 					$listbox->configure(-background=>$self->cget(-background));
 				} else {
 					$$variable = $listbox->info('anchor');
-					$$variable .= "\\".$append if $append;
+					$$variable .= "\\".$group if $group;
 					$text->configure(-background=>$args->{-background});
 					$listbox->configure(-background=>$args->{-background} );
 				}
@@ -366,6 +408,144 @@ sub page_start_menu { my ($self,$args) = (shift,shift);
 }
 
 
+=head1 CALLBACK callback_create_shortcut
+
+A convenience interface to C<Win32::Shortcut> method that creates a shortcut
+at the path specified. Parameters are pretty much what you see when
+you right-click a shortcut:
+
+=over 4
+
+=item -save_path
+
+The location at which the shortcut should be saved.
+This should be the full path including filename ending
+in C<.lnk>.
+
+The filename minus extension will be visible in the shortcut.
+If the C<-program_group> parameter was passed to
+C<METHOD page_start_menu>, the directory it refers to
+will be included in the save path you supply.To avoid
+this, either C<undef>ine the object field C<-program_group>,
+or supply the paramter C<-no_program_group>.
+
+=item -no_program_group>
+
+See C<-save_path>, above.
+
+=item -target
+
+The shortcut points to this file, directory, or URI -
+see notes for C<-save_path>, above.
+
+=item -workingdir
+
+The working directory for the C<-target>, above.
+
+=item -description
+
+This is what you see when you mouse-over a shortcut
+in more "modern" (Win2k/ME+) Windows.
+
+=item -iconpath
+
+Path to the icon file - an C<.exe>, C<.dll>, C<.ico> or
+other acceptable format.
+
+=item -iconindex
+
+Index of the icon in the file if a C<.exe> or C<.dll>.
+
+=item -arguments
+
+Um... it's the second parameter in Win32::Shortcut::Set -
+could well be parameters for the target, but I'm too much of
+a rush to check. XXX
+
+=item -show
+
+Whether the C<-target>, above, should be
+started maximized or minimized. Acceptable values are
+the constants:
+
+    SW_SHOWMAXIMIZED SW_SHOWMINNOACTIVE SW_SHOWNORMAL
+
+=item -hotkey
+
+Key combination to activate the shortcut. Probably looks
+something like C<ctrl+t>.
+
+=back
+
+On success, returns the C<-save_path>; on failure, C<undef>.
+
+=cut
+
+sub callback_create_shortcut { my ($self,$args) = (shift,{@_});
+	croak "-target is required (you gave ".(join", ",keys %$args).")"	 unless defined $args->{-target};
+	croak "-save_path is required  (you gave ".(join", ",keys %$args).")"		unless defined $args->{-save_path};
+	$args->{-arguments} 	= '' unless exists $args->{-arguments};
+	$args->{-description}	= '' unless exists $args->{-description};
+	$args->{-show}			= '' unless exists $args->{-show};
+	$args->{-hotkey} 		= '' unless exists $args->{-hotkey};
+	$args->{-iconpath} 		= '' unless exists $args->{-iconpath};
+	$args->{-iconindex}		= '' unless exists $args->{-iconindex};
+	undef $self->{-program_group} if exists $args->{-no_program_group};
+	if (exists $self->{-program_group}
+	and exists $args->{-save_path}
+	){
+		my ($base,$file) = $args->{-save_path} =~ /(.*?)([^\/\\]+)$/;
+		$base .= "\\".$self->{-program_groups};
+		mkpath $base if !-e $base;
+		$args->{-save_path} = $base."\\".$file;
+		$args->{-save_path} =~ s/[\\\/]+/\\/g;
+	}
+	if ($args->{-target} =~ /^(ht|f)tp:\/\//
+		and $args->{-save_path} !~ /\.uri$/i){
+		croak "Internet shortcuts require a .uri ending!"
+	}
+	if ($args->{-target} !~ /^(ht|f)tp:\/\//
+		and $args->{-save_path} =~ /\.uri$/i){
+		croak "Only internet shortcuts require a .uri ending!"
+	}
+	my $s = new Win32::Shortcut;
+	$s->Set(
+		$args->{-target},
+		$args->{-arguments},
+		$args->{-workingdir},
+		$args->{-description},
+		$args->{-show},
+		$args->{-hotkey},
+		$args->{-iconpath},
+		$args->{-iconindex},
+	);
+	my $r = $s->Save($args->{-save_path})?
+		$args->{-save_path} : undef;
+	$s->Close;
+	return $r;
+}
+
+=head1 CALLBACK callback_create_shortcut
+
+Convenience method to create multiple shortcuts at once.
+Supply an array of hashes, each hash being arguments
+to supply to C<callback_create_shortcut>.
+
+Returns an array or reference to an array that contains
+the reults of the shortcut creation.
+
+See L<CALLBACK callback_create_shortcut>.
+
+=cut
+
+sub callback_create_shortcuts { my $self = shift;
+	my @paths;
+	foreach (@_){
+		confess "Not a hash reference" unless ref $_ eq 'HASH';
+		$self->callback_create_shortcut(%$_);
+	}
+	return wantarray? @paths : \@paths;
+}
 
 
 
@@ -374,16 +554,12 @@ sub page_start_menu { my ($self,$args) = (shift,shift);
 
 
 
-
-
-
-
-
-
-# 1;
+ 1;
 __END__
 
+=head1 CAVEATS AND BUGS
 
+* Error going backwards into a C<addStartMenuPage>.
 
 =head1 CHANGES
 
@@ -393,9 +569,16 @@ Please see the file F<CHANGES.txt> included with the distribution.
 
 Lee Goddard (lgoddard@cpan.org).
 
+=head1 SEE ALSO
+
+Tk::Wizard; Tk::Wizard::Installer;
+Win32::GetFolderPath();
+Win32::Shortcut;
+Win32::OLE.
+
 =head1 KEYWORDS
 
-Wizard; set-up; setup; installer; uninstaller; install; uninstall; Tk; GUI; windows; win32; registry.
+Wizard; set-up; setup; installer; uninstaller; install; uninstall; Tk; GUI; windows; win32; registry; shortcut;
 
 =head1 COPYRIGHT
 

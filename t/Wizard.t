@@ -18,8 +18,8 @@ print "ok 1\n";
 my $wizard = new Tk::Wizard(
 	-title => "Wizard Test",
 	-style	=> 'top',
-	-imagepath => cwd."/wizard_blue.gif",
-	-topimagepath => cwd."/wizard_blue_top.gif",
+	-imagepath => "D:/src/pl/installer/tk/wizard/images/WizModernImage2.bmp",
+	-topimagepath => "D:/src/pl/installer/tk/wizard/images/WizModernSmallImage2.bmp",
 );
 
 print ref $wizard eq "Tk::Wizard"? "ok 2\n" : "not ok 2\n";

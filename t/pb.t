@@ -16,9 +16,9 @@ our $bar;	# Progress bar
 
 my $wizard = new Tk::Wizard(
 	-title => "ProgressBar Test",
-	-imagepath => cwd."/wizard_blue.gif",
+	-imagepath => "./Wizard/images/wizard_blue.gif",
 	-style	=> 'top',
-	-topimagepath => cwd."/wizard_blue_top.gif",
+	-topimagepath => "./Wizard/images/wizard_blue_top.gif",
 );
 print ref $wizard eq "Tk::Wizard"? "ok 2\n" : "not ok 2\n";
 $wizard->configure(

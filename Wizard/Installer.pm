@@ -1,6 +1,6 @@
 package Tk::Wizard::Installer;
 use vars qw/$VERSION/;
-$VERSION = 0.0211;	# added docs
+$VERSION = 0.0212;	# why was adddirselectpage here?!
 
 =head1 NAME
 
@@ -88,28 +88,6 @@ sub addLicencePage { my ($self,$args) = (shift, {@_});
 	$self->addPage( sub { $self->page_licence_agreement($args->{-filepath} )  } );
 }
 
-=head1 METHOD addDirSelectPage
-
-	$wizard->addDirSelectPage ( -variable => \$chosen_dir )
-
-Adds a page (C<Tk::Frame>) that contains a scrollable text box of all directories
-including, on Win32, logical drives.
-
-Supply in C<-variable> a reference to a variable to set the initial directory,
-and to have set with the chosen path.
-
-Supply C<-nowarnings> to list only drives which are accessible, thus avoiding C<Tk::DirTree>
-warnings on Win32 where removable drives have no media.
-
-You may also specify the C<-title>, C<-subtitle> and C<-text> paramters, as in L<Tk::Wizard/METHOD blank_frame>.
-
-See L<CALLBACK callback_dirSelect>.
-
-=cut
-
-sub addDirSelectPage { my ($self,$args) = (shift,{@_});
-	$self->addPage( sub { $self->page_dirSelect($args)  } );
-}
 
 
 #
@@ -200,6 +178,11 @@ sub callback_licence_agreement { my $self = shift;
 	}
 	return 1;
 }
+
+
+=head1 METHOD addDirSelectPage
+
+See L<TK::Wizard/METHOD adddirSelectPage>.
 
 
 =head1 METHOD addFileListPage

@@ -16,9 +16,7 @@ print "ok 1\n";
 
 my $wizard = new Tk::Wizard::Installer(
 	-title => "Installer Test",
-	-imagepath => cwd."/wizard_blue.gif",
 	-style	=> 'top',
-	-topimagepath => cwd."/wizard_blue_top.gif",
 );
 
 print ref $wizard eq "Tk::Wizard::Installer"? "ok 2\n" : "not ok 2\n";
@@ -39,7 +37,7 @@ print ref $wizard->cget(-preNextButtonAction) eq "CODE"? "ok 3\n":"not ok 3\n";
 our $SPLASH       	= $wizard->addPage( sub{ page_splash ($wizard)} );
 print $SPLASH==1? "ok 4\n":"not ok 4\n";
 
-our $COPYRIGHT_PAGE	= $wizard->addLicencePage( -filepath => cwd."/perl_licence_blab.txt" );
+our $COPYRIGHT_PAGE	= $wizard->addLicencePage( -filepath => "./perl_licence_blab.txt" );
 print $COPYRIGHT_PAGE==2? "ok 5\n":"not ok 5\n";
 
 $wizard->addPage( sub{ page_one($wizard) });
@@ -48,7 +46,10 @@ $wizard->addPage( sub{ page_two($wizard) });
 
 our $user_chosen_dir;
 
-our $GET_DIR 	= $wizard->addDirSelectPage ( -variable => \$user_chosen_dir );
+our $GET_DIR 	= $wizard->addDirSelectPage (
+	-variable => \$user_chosen_dir,
+	-nowarnings	=> 1,
+);
 print $GET_DIR==5? "ok 6\n":"not ok 6\n";
 
 $_ = $wizard->addPage( sub {

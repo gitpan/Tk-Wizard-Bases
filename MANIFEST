@@ -1,4 +1,5 @@
 CHANGES.txt
+MANIFEST.skip
 MANIFEST
 Makefile.PL
 README
@@ -6,12 +7,17 @@ Wizard.pm
 Wizard/Installer.pm
 Wizard/Installer/Win32.pm
 perl_licence_blab.txt
-wizard_blue.gif
-wizard_blue_top.gif
 t/Installer.t
 t/Win32.t
 t/bad_arg.t
 t/Wizard.t
 t/pb.t
-todo.gif
-done.gif
+Wizard/images/todo.gif
+Wizard/images/done.gif
+Wizard/images/wizard_blue.gif
+Wizard/images/wizard_blue_top.gif
+Wizard/images/WizModernImage.bmp
+Wizard/images/WizModernImage2.bmp
+Wizard/images/WizModernSmallImage.bmp
+Wizard/images/WizModernSmallImage2.bmp
+Wizard/images/images.txt

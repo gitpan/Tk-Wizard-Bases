@@ -7,13 +7,14 @@ Tk::Wizard - GUI for step-by-step interactive logical process
 =cut
 
 use vars qw/$VERSION/;
-$VERSION = 1.037;	# 03 April 2003
+$VERSION = 1.039;	# 15 April 2003 -wait
 
 
 # Still alpha.
 
 BEGIN {
 	use Carp;
+	use Config;
 	use Tk;
 	use Tk::DirTree;
 	use File::Path;
@@ -130,10 +131,10 @@ with every page being C<SystemButtonFace> coloured, with a large image on the
 left (C<-imagepath>, below).
 
 A value of C<top>, the Wizard will be more of a Windows 2000-like affair,
-with the initial page being a white-backgrounded version of the traditional style,
-and subsequent pages being C<SystemButtonFace> coloured, with a white
-strip at the top holding a title and subtitle, and a smaller image (see C<-topimagepath>,
-below).
+with the initial page being a white-backgrounded version of the traditional
+style, and subsequent pages being C<SystemButtonFace> coloured, with a white
+strip at the top holding a title and subtitle, and a smaller image (see
+C<-topimagepath>, below).
 
 =item Name:   imagepath
 
@@ -141,8 +142,8 @@ below).
 
 =item Switch: -imagepath
 
-Path to an image file that will be displayed on the left-hand side of the screen.
-Dimensions are not been restrained (yet).
+Path to an image file that will be displayed on the left-hand side
+of the screen. Dimensions are not been restrained (yet).
 
 Notes:
 
@@ -150,8 +151,8 @@ Notes:
 
 =item *
 
-This is a C<Tk::Photo> object without the format being specified - this has been
-tested only on GIF and JPEG.
+This is a C<Tk::Photo> object without the format being specified
+- this has been tested only on GIF and JPEG.
 
 =item *
 
@@ -160,7 +161,8 @@ maintain or restore any initial current working directory.
 
 =item *
 
-The supplied images F<wizard_blue.gif> and F<wizard_blue_top.gif> are used by default.
+The supplied images F<wizard_blue.gif> and F<wizard_blue_top.gif> are
+used by default.
 If you supply others you will probably have to set the Wizard's C<-width> and
 C<-height> properties, as there is (currently) no image-sized checking performed.
 
@@ -172,7 +174,8 @@ C<-height> properties, as there is (currently) no image-sized checking performed
 
 =item Switch: -topimagepath
 
-Only required if C<-style=E<gt>'top'> (as above): the image this filepath specifies
+Only required if C<-style=E<gt>'top'> (as above): the image
+this filepath specifies
 will be displayed in the top-right corner of the screen. Dimensions are not
 restrained (yet), but only 50px x 50px has been tested.
 
@@ -241,6 +244,18 @@ sub Populate { my ($cw, $args) = @_;
 		-tag_text				=> ['PASSIVE',"tag_text","TagText","Perl Wizard"],
 		-tag_width				=> ['PASSIVE',"tag_width","TagWidth",75],
 	);
+	if (not exists $args->{-imagepath}
+	or !-e $args->{-imagepath}){
+		warn "Can't find -imagepath, defaulting ($args->{-imagepath})." if exists $args->{-imagepath} and $^W;
+		$args->{-imagepath} = $Config{installsitearch}."/Tk/Wizard/images/wizard_blue.gif";
+		die "Bad installation! Missing default image $args->{-imagepath}" if !-e $args->{-imagepath};
+	}
+	if (not exists $args->{-topimagepath}
+	or !-e $args->{-imagepath}){
+		warn "Can't find -topimagepath, defaulting ($args->{-topimagepath})." if exists $args->{-topimagepath}  and $^W;
+		$args->{-topimagepath} = $Config{installsitearch}."/Tk/Wizard/images/wizard_blue_top.gif";
+		die "Bad installation! Missing default image $args->{-topimagepath}" if !-e $args->{-topimagepath};
+	}
 
 	$cw->{wizardPageList}	= [];
 	$cw->{wizardPagePtr}	= 0;
@@ -353,13 +368,14 @@ sub background { my ($self,$operand)=(shift,shift);
 	$wizard->addPage ($page_code_ref1 ... $page_code_refN)
 
 Adds a page to the wizard. The parameters must be references to code that
-evaluate to C<Tk::Frame> objects, such as those returned by the methods C<blank_frame>
-and C<addDirSelectPage>.
+evaluate to C<Tk::Frame> objects, such as those returned by the methods
+C<blank_frame> and C<addDirSelectPage>.
 
 Pages are (currently) stored and displayed in the order added.
 
-Returns the index of the page added, which is useful as a page UID when peforming
-checks as the I<Next> button is pressed (see file F<test.pl> supplied with the distribution).
+Returns the index of the page added, which is useful as a page UID when
+peforming checks as the I<Next> button is pressed (see file F<test.pl>
+supplied with the distribution).
 
 See also L<METHOD blank_frame> and L<METHOD addDirSelectPage>.
 
@@ -518,10 +534,11 @@ sub parent { return shift }
 
 =head2 METHOD blank_frame
 
-	my $frame = wizard>->blank_frame(-title=>$title,-subtitle=>$sub,-text=>$standfirst);
+	my $frame = wizard>->blank_frame(-title=>$title,-subtitle=>$sub,-text=>$standfirst, -wait=>$sometime);
 
-Returns a C<Tk::Frame> object that is a child of the Wizard control, with some C<pack>ing
-parameters applied - for more details, please see C<-style> entry elsewhere in this document.
+Returns a C<Tk::Frame> object that is a child of the Wizard control, with
+some C<pack>ing parameters applied - for more details, please see C<-style>
+entry elsewhere in this document.
 
 Arguments are name/value pairs:
 
@@ -538,6 +555,14 @@ Subtitle/standfirst.
 =item -text =>
 
 Main body text.
+
+=item -wait =>
+
+The amount of time in thousands of a second to wait before moving forwards
+regardless of the user. This actually just calls the C<forward> method (see
+L<METHOD forward>).
+
+See also: L<Tk::after>.
 
 =back
 
@@ -687,6 +712,10 @@ sub blank_frame { my ($self,$args) = (shift,{@_});
 #	$_ = $frame->Frame->pack(qw/-anchor s -side bottom -fill both -expand 1/);
 #	$_->configure(-background => $frame->cget("-background") );
 #	$_->packPropagate(0);
+
+	if ($args->{-wait}){
+		$frame->after($args->{-wait},sub{$self->forward});
+	}
 
 	return $frame->pack(qw/-side top -anchor n -fill x/);
 } # end blank_frame

@@ -1,5 +1,18 @@
 CHANGES
 
+VERSION 1.040 UNRELEASED
+
+	*	Tk::Wizard::Installer::Win32 uses Win32.pm falls back to Win32::OLE
+
+	*	Tk::Wizard - added -wait to blank_page
+
+VERSION 1.038 11 April 2003
+
+	*	Images install to perlsitearch dir and are
+		used by default; added more warnings.
+
+	*	Win32::Installer can now create shortcuts!
+
 VERSION 1.037 08 April 2003
 
 	*	Added addStartMenuPage to Tk::Wizard::Installer::Win32
