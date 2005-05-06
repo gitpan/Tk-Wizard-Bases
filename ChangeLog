@@ -1,61 +1,51 @@
-2005-03-11  Kingpin  <mthurn@verizon.net>
+Tk::Wizard CHANGES LOG
+----------------------
+
+VERSION 1.08
+
+	* Mainly release to get the test suite working again,
+	  and totally automated and devoid of net-access requirement
+	* added -image_dir to help test suite
+	- Martin said images are found in sitelibexp, not installsitearch
+	  but that is not the case from the test suite.
+	* replaced -wait to test suite for automated testing
+	* dir select page for Win32 now tests for fixed drives when -nowarnings ne 1
+	* test script for dir selet page -nowarnings=9
+	* propogate -wait to all routines based on blank_frame, even dirselect for auto tests
+	* weird errors from NextButtonEventCycle when final page has -wait call "forward"
+	* simplified Installer test, remvoing dir select
+	* Added hashes to Installer warnings
+	* Passes all tests on Windoze. Will try Debian on Monday.
+
+VERSION 1.07 patched by Martin Thurn <mthurn@verizon.net>:
 
 	* lib/Tk/Wizard.pm (Show, render_current_page): BUGFIX for DirSelectPage leaving Cwd in an unknown place
-	* lib/Tk/Wizard.pm: FIX all typos in pod
-
-2005-02-11  Kingpin  <mthurn@verizon.net>
-
+	* lib/Tk/Wizard.pm: Fixed [most!] typos in pod
 	* lib/Tk/Wizard.pm (page_dirSelect): FIX: if caller dictates height, expand widgets to fit
-
-2005-02-10  Kingpin  <mthurn@verizon.net>
-
 	* lib/Tk/Wizard.pm (blank_frame): BUGFIX: top image had wrong bgcolor
-
-2005-02-10  Kingpin  <mthurn@verizon.net>
-
 	* lib/Tk/Wizard.pm (Populate): BUGFIX: -imagepath instead of -topimagepath in 2 places
-
-2005-02-03  Kingpin  <mthurn@verizon.net>
-
 	* lib/Tk/Wizard.pm (Populate): FIX for some widgets having wrong bgcolor
-
-2005-02-02  Kingpin  <mthurn@verizon.net>
-
 	* lib/Tk/Wizard.pm (page_dirSelect): clean up extraneous hardcoded references to %ENV
-
-2005-02-02  Kingpin  <mthurn@verizon.net>
-
 	* lib/Tk/Wizard.pm (page_dirSelect): BUGFIX: missing '-' in front of 'command'
-
-2005-02-01  Kingpin  <mthurn@verizon.net>
-
 	* lib/Tk/Wizard.pm (Populate): cleaned up the "tag text" (still not perfect, but better)
-
-2005-02-01  Kingpin  <mthurn@verizon.net>
-
 	* lib/Tk/Wizard.pm (_font_family): more flexible font handling; better default fonts on Unix
-
-2005-02-01  Kingpin  <mthurn@verizon.net>
-
 	* lib/Tk/Wizard.pm (Populate): images are found in sitelibexp, not installsitearch
 
-CHANGES
+VERSION 1.06
 
-VERSION 1.06 
-	
-	*	Tk::Installer supports downloads; 
-	
+	*	Tk::Installer supports downloads;
+
 	*	-continue dropped for semmantically inverse but more apt -wait
-	
+
 	*	Tk::Wizard::Installer::Win32 uses Win32.pm falls back to Win32::OLE
 
 	*	Tk::Wizard - added -wait to blank_page
-	
+
 	*	First and last frames fill frame when -style=>top is specified
-	
+
 	*	DIALOGUE_really_quit referred to "Set Up" which wasn't very generic.
 		Now just refers to the wizard.
-		
+
 	*	Bug fixed for default -style.
 
 VERSION 1.038 11 April 2003

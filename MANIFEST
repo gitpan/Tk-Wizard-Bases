@@ -16,8 +16,9 @@ MANIFEST			This list of files
 META.yml
 perl_licence_blab.txt
 README
-t/bad_arg.t
-t/Installer.t
-t/pb.t
-t/Win32.t
-t/Wizard.t
+TODO
+t/20_bad_arg.t
+t/50_Installer.t
+t/30_pb.t
+t/40_Win32.t
+t/10_Wizard.t

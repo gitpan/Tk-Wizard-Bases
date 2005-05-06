@@ -15,17 +15,18 @@ our ($PB);	# Index number of page
 our $bar;	# Progress bar
 
 my $wizard = new Tk::Wizard(
-                            -title => "ProgressBar Test",
-                            -imagepath => "./Wizard/images/wizard_blue.gif",
-                            -style	=> 'top',
-                            -topimagepath => "./Wizard/images/wizard_blue_top.gif",
-                           );
+	-title => "ProgressBar Test",
+	-image_dir	=> 'lib/Tk/Wizard/images/',
+	-imagepath => "./Wizard/images/wizard_blue.gif",
+	-style	=> 'top',
+	-topimagepath => "./Wizard/images/wizard_blue_top.gif",
+);
 isa_ok($wizard, "Tk::Wizard");
 $wizard->configure(
-                   -postNextButtonAction => sub { &postNextButtonAction($wizard) },
-                   -preNextButtonAction => sub { &preNextButtonAction($wizard) },
-                   -finishButtonAction  => sub { ok(1);  $wizard->destroy;},
-                  );
+	-postNextButtonAction => sub { &postNextButtonAction($wizard) },
+	-preNextButtonAction => sub { &preNextButtonAction($wizard) },
+	-finishButtonAction  => sub { ok(1);  $wizard->destroy;},
+);
 isa_ok($wizard->cget(-preNextButtonAction), "CODE");
 
 is(1, $wizard->addPage( sub{ page_splash ($wizard)} ));

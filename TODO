@@ -1,0 +1,8 @@
+Tk::Wizard TODO
+
+* Fit text to pages, with scrollbars.
+
+* Make MainWindow an option
+
+* Trace weird error (see CHANGES)
+

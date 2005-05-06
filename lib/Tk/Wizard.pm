@@ -7,7 +7,7 @@ Tk::Wizard - GUI for step-by-step interactive logical process
 =cut
 
 use vars qw/$VERSION/;
-$VERSION = do { my @r = (q$Revision: 1.83 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 # Still alpha.
 
@@ -18,12 +18,11 @@ use Tk;
 use Tk::DirTree;
 use File::Path;
 use Tk::ROText;
-BEGIN
-  {
-  require Exporter;	   # Exporting Tk's MainLoop so that
-  @ISA = "Exporter";	   # I can just use strict and Tk::Wizard without
-  @EXPORT = ("MainLoop");  # having to use Tk
-  } # end of BEGIN block
+BEGIN {
+	require Exporter;	   		# Exporting Tk's MainLoop so that
+	@ISA = ( "Exporter",);	   # I can just use strict and Tk::Wizard without
+	@EXPORT = ("MainLoop");   # having to use Tk
+} # end of BEGIN block
 
 use strict;
 if ($^V and $^V gt v5.8.0){
@@ -32,19 +31,14 @@ if ($^V and $^V gt v5.8.0){
 use base  qw(Tk::MainWindow);
 Tk::Widget->Construct('Wizard');
 
-use vars qw/%LABELS %DRIVETYPES/;
+use vars qw/%LABELS/;
 
 # See INTERNATIONALISATION
 %LABELS = (
 	# Buttons
 	BACK => "< Back",	NEXT => "Next >",
 	FINISH => "Finish",	CANCEL => "Cancel",
-	HELP => "Help", OK => "OK",
-);
-
-# Only used in Win32: see &page_dirSelect
-%DRIVETYPES = (
-	3=>1, 4=>1,6=>1,
+	HELP => "Help",		OK => "OK",
 );
 
 
@@ -62,8 +56,10 @@ use vars qw/%LABELS %DRIVETYPES/;
 	);
 	$wizard->addPage( sub {
 		return $wizard->blank_frame(
-			-title	=> "Page Title",
-			-text	=> "Some text.",
+			-title	  => "Page Title",
+			-subtitle => "Sub-title",
+			-text	  => "Some text.",
+			-wait	  => $seconds_b4_proceeding_anyway,
 		);
 	});
 	$wizard->Show;
@@ -165,15 +161,15 @@ maintain or restore any initial current working directory.
 =item *
 
 The supplied images F<wizard_blue.gif> and F<wizard_blue_top.gif> are
-used by default.
+used by default, and are expected in the directory specified in C<-image_dir>,
+explained below.
 
-If you supply others you may have to set the Wizard's C<-width> and
-C<-height> properties, as there is (currently) no image size-checking
-performed.
+If you supply different images you may have to set the Wizard's C<-width> and
+C<-height> properties, as there is (currently) no image size-checking performed.
 
 A large number of nicely-sized Wizard images -- some old, some new --
-by Pál Kornél can be found at L<http://kornelpal.aom.hu/innosetup/files/WizardImages.cab>.
-(1748 KB, 2003-01-06).
+by Pál Kornél can be found via L<http://www.kornelpal.hu/wizardimages/>
+-- I<Köszönöm>, Kornél.
 
 =back
 
@@ -188,7 +184,7 @@ this filepath specifies
 will be displayed in the top-right corner of the screen. Dimensions are not
 restrained (yet), but only 50x50 has been tested.
 
-Please see notes for the C<-imagepath> entry, above.
+Please see notes for the C<-imagepath> entry and C<-image_dir>.
 
 =item Name:   nohelpbutton
 
@@ -221,6 +217,14 @@ Default value is based on the length of your -tag_text.
 
 Disables display of the C<-tag_text>, above.
 
+=item -image_dir
+
+Base directory in which to find images required by this module:
+defaults to C<$Config::Config{sitelibexp}."/Tk/Wizard/images/">,
+which is where the installation process is intended to install them.
+This is only used if C<-topimagepath> and C<-imagepath> are not
+supplied.
+
 =back
 
 Please see also L<ACTION EVENT HANDLERS>.
@@ -242,6 +246,7 @@ sub Populate { my ($cw, $args) = @_;
 		$^O=~/(MSWin32|cygwin)/i? 'SystemButtonFace':undef],
 		-style			=> ['PASSIVE',"style","Style","95"],
 		-imagepath		=> ['PASSIVE','imagepath', 'Imagepath', undef],
+		-image_dir		=> ['PASSIVE','image_idr', 'Image_Dir', undef],
 		-topimagepath	=> ['PASSIVE','topimagepath', 'Topimagepath', undef],
 		# event handling references
 		-nohelpbutton			=> ['PASSIVE',undef,undef,undef],
@@ -258,27 +263,36 @@ sub Populate { my ($cw, $args) = @_;
 		-tag_text				=> ['PASSIVE', "tag_text", "TagText", $sTagTextDefault],
 		-tag_width				=> ['PASSIVE', "tag_width", "TagWidth", $iTagWidthDefault],
 	);
+
+	if (not $args->{-image_dir}){
+		$args->{-image_dir}		= $Config{sitelibexp}."/Tk/Wizard/images/";
+	}
+	if (not -d $args->{-image_dir}){
+		confess "No such dir as -image_dir ".$args->{-image_dir};
+	}
 	if (not exists $args->{-imagepath}
 	or !-e $args->{-imagepath}){
-		warn "Can't find -imagepath, defaulting ($args->{-imagepath})." if exists $args->{-imagepath} and $^W;
-		$args->{-imagepath} = $Config{sitelibexp}."/Tk/Wizard/images/wizard_blue.gif";
-		die "Bad installation! Missing default image $args->{-imagepath}" if !-e $args->{-imagepath};
+		warn "# Can't find file at -imagepath, defaulting (was $args->{-imagepath})." if exists $args->{-imagepath} and $^W;
+		$args->{-imagepath} = $args->{-image_dir}."wizard_blue.gif";
+		confess "Bad installation! Missing default image $args->{-imagepath}" if !-e $args->{-imagepath};
 	}
 	if (not exists $args->{-topimagepath}
 	or !-e $args->{-topimagepath}){
-		warn "Can't find -topimagepath, defaulting ($args->{-topimagepath})." if exists $args->{-topimagepath}  and $^W;
-		$args->{-topimagepath} = $Config{sitelibexp}."/Tk/Wizard/images/wizard_blue_top.gif";
-		die "Bad installation! Missing default image $args->{-topimagepath}" if !-e $args->{-topimagepath};
+		warn "# Can't find file at -topimagepath, defaulting (was $args->{-topimagepath})." if exists $args->{-topimagepath}  and $^W;
+		$args->{-topimagepath} = $args->{-image_dir}."wizard_blue_top.gif";
+		confess  "Missing default image $args->{-topimagepath}" if !-e $args->{-topimagepath};
 	}
 
 	$cw->{wizardPageList}	= [];
 	$cw->{wizardPagePtr}	= 0;
 	$cw->{wizardFrame}		= 0;
+	$cw->{-image_dir}		= $args->{-image_dir}		|| "";
 	$cw->{-imagepath}		= $args->{-imagepath}		|| "";
 	$cw->{-topimagepath}	= $args->{-topimagepath}	|| "";
 	$cw->{-style}			= $args->{-style} 			|| "95";
 	$cw->{background_userchoice} = $args->{-background} || $cw->ConfigSpecs->{-background}[3];
-	$cw->{background} = $cw->{background_userchoice};
+	$cw->{background} 		= $cw->{background_userchoice};
+
 	$args->{-title}  = "Wizard" unless $args->{-title};
 	$args->{-style} = $cw->{-style} unless $args->{-style};	# yuck
 	$args->{-width } = ($args->{-style} eq 'top'? 500 : 570) unless $args->{-width};
@@ -435,13 +449,13 @@ and must preced the C<MainLoop> call.
 
 sub Show { my $self = shift;
 	if ($^W and $#{$self->{wizardPageList}}==0){
-		warn "Showing a Wizard that is only one page long";
+		warn "# Showing a Wizard that is only one page long";
 	}
-           # The DirSelectPage contains some SERIOUSLY convoluted code
-           # to create and navigate the DirTree, including chdirs all
-           # over the place.  So, before doing any chdir, we need to
-           # remember Cwd so we can chdir back there when we're done:
-           $self->{_cwd_} = getcwd;
+	# The DirSelectPage contains some SERIOUSLY convoluted code
+	# to create and navigate the DirTree, including chdirs all
+	# over the place.  So, before doing any chdir, we need to
+	# remember Cwd so we can chdir back there when we're done:
+	$self->{_cwd_} = getcwd;
 	$self->initial_layout;
 	$self->render_current_page;
 
@@ -454,6 +468,7 @@ sub Show { my $self = shift;
 	$self->protocol( WM_DELETE_WINDOW => [ \&CloseWindowEventCycle, $self, $self]);
 	$self->packPropagate(0);
 	$self->configure("-background"=>$self->cget("-background"));
+	++$self->{_Shown};
 } # end of sub Show
 
 
@@ -470,6 +485,8 @@ by doing something like this:
 =cut
 
 sub forward { my $self=shift;
+	return $self->NextButtonEventCycle;
+
 	return $self->{nextButton}->invoke;
 }
 
@@ -493,7 +510,7 @@ sub backward { my $self=shift;
 #
 sub initial_layout { my $self = shift;
 	if ($^W and $self->cget(-style) eq 'top' and not $self->cget(-topimagepath)){
-		warn "Wizard has -style=>top but not -topimagepath is defined";
+		warn "# Wizard has -style=>top but not -topimagepath is defined";
 	}
 	# Wizard 98/95 style
 	if ($self->cget(-style) eq '95' or $self->{wizardPagePtr}==0){
@@ -520,11 +537,9 @@ sub initial_layout { my $self = shift;
 # Maybe sub-class me
 #
 sub render_current_page { my $self = shift;
-                          # Before doing anything on this page, chdir
-                          # back to our start directory in case the
-                          # previously rendered page was a
-                          # DirSelectPage which did some wild chdirs:
-                          chdir $self->{_cwd_} if $self->{_cwd_};
+	# Before doing anything on this page, chdir back to our start directory in case the
+	# previously rendered page was a DirSelectPage which did some wild chdirs:
+	chdir $self->{_cwd_} if $self->{_cwd_};
 	my %frame_pack = ( -side => "top" );
 	if (($self->{wizardPagePtr} > 0 and $self->{wizardPagePtr} < $#{$self->{wizardPageList}})
 		and $self->{-style} ne '95'
@@ -628,8 +643,7 @@ See also L<METHOD addDirSelectPage>.
 
 #
 # Sub-class me:
-#	accept the args in the POD and
-#	return a Tk::Frame
+#	accept the args in the POD and return a Tk::Frame
 #
 sub blank_frame { my ($self,$args) = (shift,{@_});
 	my ($main_bg,$main_wi);
@@ -769,7 +783,7 @@ sub blank_frame { my ($self,$args) = (shift,{@_});
 	if ($args->{-wait}){
 		$frame->after($args->{-wait},sub{$self->forward});
 	}
-                  $frame->packPropagate(0);
+	$frame->packPropagate(0);
 	return $frame->pack(qw/-side top -anchor n -fill x/);
 } # end blank_frame
 
@@ -843,30 +857,25 @@ sub dispatch { my $handler = shift;
 #              wizard button bar. This includes dispatching the preNextButtonAction and
 #              postNextButtonAction handler at the apporprate times.
 #
-sub NextButtonEventCycle
-  {
-  my $self = shift;
-  # print STDERR " DDD NextButtonEventCycle, self is $self\n";
-  if( dispatch( $self->cget(-preNextButtonAction) )) { return;}
-  # advance the wizard page pointer and then adjust the navigation buttons.
-  # readraw the frame when finished to get changes to take effect.
-  $self->{wizardPagePtr}++;
-  $self->{wizardPagePtr} = $#{$self->{wizardPageList}} if( $self->{wizardPagePtr} >= $#{ $self->{wizardPageList}});
-  $self->{backButton}->configure( -state => "normal");
-  if( $self->{nextButton}->cget( -text) eq $LABELS{FINISH}) {
-    if( dispatch( $self->cget(-finishButtonAction))) { return; }
-    $self->CloseWindowEventCycle();
-    }
-  if ($self->{wizardPagePtr} == $#{ $self->{wizardPageList}})
-    {
-    # print STDERR " DDD on the last page, nextbutton is $self->{nextButton}\n";
-    $self->{nextButton}->configure( -text => $LABELS{FINISH}) ;
-    $self->{cancelButton}->packForget();
-    $self->{backButton}->packForget();
-    }
-  $self->render_current_page;
-  if( dispatch( $self->cget(-postNextButtonAction))) { return; }
-  }
+sub NextButtonEventCycle { my $self = shift;
+	if (dispatch( $self->cget(-preNextButtonAction) )) { return;}
+	# advance the wizard page pointer and then adjust the navigation buttons.
+	# readraw the frame when finished to get changes to take effect.
+	$self->{wizardPagePtr}++;
+	$self->{wizardPagePtr} = $#{$self->{wizardPageList}} if( $self->{wizardPagePtr} >= $#{ $self->{wizardPageList}});
+	$self->{backButton}->configure( -state => "normal");
+	if( $self->{nextButton}->cget("-text") eq $LABELS{FINISH}) {
+		if ( dispatch( $self->cget(-finishButtonAction))) { return; }
+		$self->CloseWindowEventCycle();
+	}
+	if ($self->{wizardPagePtr} == $#{ $self->{wizardPageList}}) {
+		$self->{cancelButton}->packForget() if $self->{cancelButton};
+		$self->{backButton}->packForget() if $self->{backButton};
+		$self->{nextButton}->configure( -text => $LABELS{FINISH}) if $self->{nextButton};
+	}
+	$self->render_current_page;
+	if (dispatch( $self->cget(-postNextButtonAction))) { return; }
+}
 
 sub BackButtonEventCycle { my $self=shift;
 	return if dispatch( $self->cget(-preBackButtonAction));
@@ -922,8 +931,10 @@ directory, and to have set with the chosen path.
 
 Supply C<-nowarnings> with a value of C<1> to list only drives which are
 accessible, thus avoiding C<Tk::DirTree> warnings on Win32 where removable
-drives have no media. Supply C<-nowarnings> with any other
-value to avoid listing drives which are both inaccessible and - on Win32 - are
+drives have no media.
+
+Supply C<-nowarnings> a value other than C<1> to avoid listing drives
+which are both inaccessible and - on Win32 - are
 either fixed drives, network drives, or RAM drives (that is types 3, 4, and
 6, according to C<Win32API::File::GetDriveType>.
 
@@ -947,26 +958,27 @@ sub addDirSelectPage { my ($self,$args) = (shift,{@_});
 # As blank_frame plus:
 # -variable => Reference to a variable to set.
 # -nowarnings => 1 : chdir to each drive first and only list if accessible
-#             => >1: as 1, plus on types 3,4 and 6.
-#
-sub page_dirSelect
-  {
-  my ($self,$args) = (shift,shift);
+#             => !1: as 1, plus on types 3,4 and 6.
+# -directory  => start dir
+sub page_dirSelect { my ($self,$args) = (shift,shift);
 	if (not $args->{-variable}){
-		croak "You must supply a -variable parameter";
+		confess "You must supply a -variable parameter";
 	} elsif (not ref $args->{-variable}){
-		croak "The -variable parameter must be a reference";
+		confess "The -variable parameter must be a reference";
 	}
 	my $_drives = sub {
 		return '/' if $^O !~ /MSWin32/i;
+		# Yuck: it does work, though. Somehow.
 		eval('require Win32API::File');
 		return Win32API::File::getLogicalDrives();
 	};
 	my ($frame,@pl) = $self->blank_frame(
-		-title => $args->{-title} || "Please choose a directory",
+		-title	  => $args->{-title} || "Please choose a directory",
 		-subtitle => $args->{-subtitle}  || "After you have made your choice, press Next to continue.",
-		-text => $args->{-text} || "",
+		-text	  => $args->{-text} || "",
+		-wait	  => $args->{-wait} || undef,
 	);
+
 	$frame->Frame(-height=>10)->pack();
 	my $entry	= $frame->Entry(
 		-justify		=> 'left',
@@ -974,7 +986,8 @@ sub page_dirSelect
 		-textvariable	=> $args->{-variable},
 	)->pack(-side=>'top',-anchor=>'w',-fill=>"x", -padx=>10, -pady=>10,);
 	$entry->configure(-background=>$self->cget("-background")) if $self->cget("-background");
-	my $dirs	= $frame->Scrolled ( "DirTree",
+
+	my $dirs = $frame->Scrolled ( "DirTree",
 		-scrollbars => 'osoe',
 		-selectbackground => "navy", -selectforeground => "white",-selectmode =>'browse',
 		-width=>40, -height=>10,
@@ -983,9 +996,9 @@ sub page_dirSelect
 	$dirs->configure(-background=>$self->cget("-background")) if $self->cget("-background");
 	$frame->Frame(-height=>10)->pack();
 
-	my $mkdir = $frame->Button( -text => "New Directory",
-                                    -command => sub
-                                      {
+	my $mkdir = $frame->Button(
+		-text => "New Directory",
+        -command => sub {
 			my $new_name = $self->prompt(-title=>'Create New Directory',-text=>"Please enter the name for the new directory");
 			if ($new_name){
 				$new_name =~ s/[\/\\]//g;
@@ -1012,30 +1025,32 @@ sub page_dirSelect
                                       }, # end of -command sub
 	)->pack( -side => 'right', -anchor => 'w', -padx=>'10', );
 	if ($self->{desktop_dir}){ # Thanks, Slaven Rezic.
-		$frame->Button( -text => "Desktop",
+		$frame->Button(
+			-text => "Desktop",
 			-command => sub {
 				${$args->{-variable}} = $self->{desktop_dir};
 				$dirs->configure(-directory => $self->{desktop_dir});
 				$dirs->chdir($self->{desktop_dir});
 			},
 		)->pack( -side => 'right', -anchor => 'w', -padx=>'10', );
-	} # if desktop_dir
+	}
+
 	foreach my $d (&$_drives){
 		($d) =~ /^(\w+:)/;
 		if ($args->{-nowarnings} and ($args->{-nowarnings} eq "1"
-		or $^O !~ /MSWin32/i)){
+		or $^O !~ /win/i)){
 			$dirs->configure(-directory=>$d) if chdir $d;
-		} elsif ($args->{-nowarnings}){
-			if ($DRIVETYPES{Win32API::File::GetDriveType($d)}
-			and chdir $d){
-				$dirs->configure(-directory=>$d);
-			}
-		} else {
+		}
+		elsif ($args->{-nowarnings}){ # Fixed drive only
+			$dirs->configure(-directory=>$d) if Win32API::File::GetDriveType($d)==3
+				and chdir $d;
+		}
+		else {
 			$dirs->configure(-directory=>$d);
 		}
-	} # foreach
+	}
   return $frame;
-  } # page_dirSelect
+}
 
 
 =head1 CALLBACK callback_dirSelect
@@ -1178,17 +1193,17 @@ contains the task list. Default label is the boring C<Performing Tasks:>.
 sub page_taskList { my ($self,$args) = (shift,shift);
 	my @tasks;
 	if (not $args->{-todo_photo}){
-		warn "No -todo_photo" if $^W;
+		warn "# No -todo_photo" if $^W;
 	} elsif  (!-r $args->{-todo_photo}
 		or not $self->Photo( "todo", -file => $args->{-todo_photo})){
-		warn "Could not read -todo_photo at $args->{-todo_photo}" if $^W;
+		warn "# Could not read -todo_photo at $args->{-todo_photo}" if $^W;
 		undef $args->{-todo_photo};
 	}
 	if (not $args->{-done_photo}){
-		warn "No -done_photo" if $^W;
+		warn "# No -done_photo" if $^W;
 	} elsif (!-r $args->{-done_photo}
 	or !$self->Photo( "done", -file => $args->{-done_photo})){
-		warn "Could not read $args->{-done_photo}" if $^W;
+		warn "# Could not read $args->{-done_photo}" if $^W;
 		undef $args->{-done_photo};
 	}
 	$args->{-frame_pack} = [
@@ -1201,9 +1216,10 @@ sub page_taskList { my ($self,$args) = (shift,shift);
 	] unless $args->{-frame_args};
 
 	my $frame = $self->blank_frame(
-		-title => $args->{-title} || "Performing Taks",
+		-title	  => $args->{-title} || "Performing Taks",
 		-subtitle => $args->{-subtitle}  || "Please wait whilst the Wizard performs these tasks.",
-		-text => $args->{-text}  || "",
+		-text	  => $args->{-text}  || "",
+		-wait	  => $args->{-wait} || undef,
 	);
 	if ($#{$args->{-tasks}}>-1){
 		my $task_frame = $frame->LabFrame(
@@ -1608,8 +1624,9 @@ Wizard; set-up; setup; installer; uninstaller; install; uninstall; Tk; GUI.
 
 Copyright (c) Daniel T Hable, 2/2002.
 
-Modifications Copyright (C) Lee Goddard, 11/2002 - 01/2003
-and Martin Thurn 2005.
+Copyright (C) Lee Goddard, 11/2002 - 05/2005 ff
+
+Patches Copyright (C) Martin Thurn 2005.
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
