@@ -7,9 +7,8 @@ Tk::Wizard - GUI for step-by-step interactive logical process
 =cut
 
 use vars qw/$VERSION/;
-$VERSION = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
-
-# Still alpha.
+$VERSION = do { my @r = (q$Revision: 1.92 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+# 21 November 2005, patch supplied by Martin Thurn
 
 use Carp;
 use Config;
@@ -784,7 +783,7 @@ sub blank_frame { my ($self,$args) = (shift,{@_});
 		$frame->after($args->{-wait},sub{$self->forward});
 	}
 	$frame->packPropagate(0);
-	return $frame->pack(qw/-side top -anchor n -fill x/);
+	return $frame->pack(qw/-side top -anchor n -fill both -expand 1/);
 } # end blank_frame
 
 

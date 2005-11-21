@@ -1,8 +1,8 @@
 package Tk::Wizard::Installer;
 
 use vars qw/$VERSION/;
-$VERSION = do { my @r = (q$Revision: 1.9 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
-# 06 May 2005
+$VERSION = do { my @r = (q$Revision: 1.92 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+# 21 November 2005, patch supplied by Martin Thurn
 
 =head1 NAME
 
@@ -120,7 +120,6 @@ sub page_licence_agreement { my ($self,$licence_file) = (shift,shift);
 	my ($frame,@pl) = $self->blank_frame(
 		-title	 =>"End-user Licence Agreement",
 		-subtitle=>"Please read the following licence agreement carefully.",
-		-text	 =>"\n"
 	);
 	my $t = $frame->Scrolled(
 		qw/ROText -relief sunken -borderwidth 2 -font SMALL_FONT -width 10 -setgrid true
@@ -129,8 +128,7 @@ sub page_licence_agreement { my ($self,$licence_file) = (shift,shift);
 
 	$t->insert('0.0', $text);
 	$t->configure(-state => "disabled");
-	$t->pack(qw/-expand 1 -fill both -padx 10 /);
-	$frame->Frame(-height=>10)->pack();
+	$t->pack(qw/-expand 1 -fill both -padx 10 -pady 10/);
 	my %opts1 = (
 		-font => $self->{defaultFont},
 		-text     => $LABELS{LICENCE_OPTION_YES},
@@ -138,8 +136,10 @@ sub page_licence_agreement { my ($self,$licence_file) = (shift,shift);
 		-relief   => 'flat',
 		-value    => 1,
 		-anchor	=> 'w',
-		-background=>$self->cget("-background"),
 	);
+        # Setting -background to undef causes core dump deep inside Tk!
+        $opts1{-background} = $self->cget("-background") if $self->cget("-background");
+
 	if ($^O !~ /(win32|cygwin)/i){
 		$opts1{-underline} = 2;
 	}
@@ -151,8 +151,9 @@ sub page_licence_agreement { my ($self,$licence_file) = (shift,shift);
 		-relief   => 'flat',
 		-value    => 0,
 		-anchor	=> 'w',
-		-background=>$self->cget("-background"),
 	);
+        # Setting -background to undef causes core dump deep inside Tk!
+        $opts2{-background} = $self->cget("-background") if $self->cget("-background");
 	if ($^O !~ /(win32|cygwin)/i){
 		$opts2{-underline} = 5;
 	}

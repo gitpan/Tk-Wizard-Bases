@@ -1,6 +1,18 @@
 Tk::Wizard CHANGES LOG
 ----------------------
 
+VERSION 1.92
+
+	* Patch by Martin Thurn: thanks!
+	* in Installer.pm, prevent Tk core dump when background is undef
+	* in Installer.pm, eliminate the big empty space on the licence_page
+	* in Wizard.pm, make all of the user portion (but none of the button/borders) expand when the window is resized
+
+VERSION 1.90
+	
+	May 2005
+	Um...
+	
 VERSION 1.08
 
 	* Mainly release to get the test suite working again,
