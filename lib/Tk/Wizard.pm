@@ -7,8 +7,7 @@ Tk::Wizard - GUI for step-by-step interactive logical process
 =cut
 
 use vars qw/$VERSION/;
-$VERSION = do { my @r = (q$Revision: 1.92 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
-# 21 November 2005, patch supplied by Martin Thurn
+$VERSION = do { my @r = (q$Revision: 1.93 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 use Carp;
 use Config;
@@ -242,10 +241,10 @@ sub Populate { my ($cw, $args) = @_;
 		-command    	=> ['CALLBACK', undef, undef, undef ],
 #		-foreground 	=> ['PASSIVE', 'foreground','Foreground', 'black'],
 		-background 	=> ['METHOD', 'background','Background',
-		$^O=~/(MSWin32|cygwin)/i? 'SystemButtonFace':undef],
+		$^O=~/(win)/i? 'SystemButtonFace':undef],
 		-style			=> ['PASSIVE',"style","Style","95"],
 		-imagepath		=> ['PASSIVE','imagepath', 'Imagepath', undef],
-		-image_dir		=> ['PASSIVE','image_idr', 'Image_Dir', undef],
+		-image_dir		=> ['PASSIVE','image_dir', 'Image_Dir', undef],
 		-topimagepath	=> ['PASSIVE','topimagepath', 'Topimagepath', undef],
 		# event handling references
 		-nohelpbutton			=> ['PASSIVE',undef,undef,undef],
@@ -263,12 +262,17 @@ sub Populate { my ($cw, $args) = @_;
 		-tag_width				=> ['PASSIVE', "tag_width", "TagWidth", $iTagWidthDefault],
 	);
 
-	if (not $args->{-image_dir}){
-		$args->{-image_dir}		= $Config{sitelibexp}."/Tk/Wizard/images/";
+	if (not exists $args->{-imagepath} or not exists $args->{-topimagepath}) {
+		# Martin Thurn: don't complain about image_dir if the user has specified
+		# 				their own explicit -imagepath and -topimagepath.
+		if (not $args->{-image_dir}){
+			$args->{-image_dir} = $Config{sitelibexp}."/Tk/Wizard/images/";
+		}
+		if (not -d $args->{-image_dir}){
+			confess "No such dir as -image_dir ".$args->{-image_dir};
+		}
 	}
-	if (not -d $args->{-image_dir}){
-		confess "No such dir as -image_dir ".$args->{-image_dir};
-	}
+
 	if (not exists $args->{-imagepath}
 	or !-e $args->{-imagepath}){
 		warn "# Can't find file at -imagepath, defaulting (was $args->{-imagepath})." if exists $args->{-imagepath} and $^W;
@@ -356,13 +360,13 @@ sub Populate { my ($cw, $args) = @_;
 	)->pack(qw/-side left -anchor e/);
 
 	# Desktops for dir select: thanks to Slaven Rezic who also suggested SHGetSpecialFolderLocation for Win32. l8r
-	if ($^O =~ /(MSWin32|cygwin)/i and -d "$ENV{USERPROFILE}/Desktop"){
+	if ($^O =~ /(win)/i and -d $ENV{USERPROFILE}."/Desktop"){
 		# use OLE;
-		$cw->{desktop_dir} = "$ENV{USERPROFILE}/Desktop"
+		$cw->{desktop_dir} = $ENV{USERPROFILE}."/Desktop"
 	} elsif (-d "$ENV{HOME}/Desktop"){
-		$cw->{desktop_dir} = "$ENV{HOME}/Desktop";
+		$cw->{desktop_dir} = $ENV{HOME}."/Desktop";
 	} elsif (-d "$ENV{HOME}/.gnome-desktop"){
-		$cw->{desktop_dir} = "$ENV{HOME}/.gnome-desktop";
+		$cw->{desktop_dir} = $ENV{HOME}."/.gnome-desktop";
 	}
 	# Font used for &blank_frame titles
 	$cw->fontCreate('TITLE_FONT', -family => $sFontFamily, -size => $iFontSize*1.5, -weight => 'bold');
@@ -379,20 +383,18 @@ sub Populate { my ($cw, $args) = @_;
 }
 
 # Private method: returns a font family name suitable for the operating system.
-sub _font_family
-  {
-  return 'verdana' if ($^O =~ m!win32!i);
-  return 'helvetica' if ($^O =~ m!solaris!i);
-  return 'helvetica';
-  } # _font_family
+sub _font_family {
+	return 'verdana' if ($^O =~ m!win32!i);
+	return 'helvetica' if ($^O =~ m!solaris!i);
+	return 'helvetica';
+}
 
 # Private method: returns a font size suitable for the operating system.
-sub _font_size
-  {
-  return 8 if ($^O =~ m!win32!i);
-  return 12 if ($^O =~ m!solaris!i);
-  return 10;
-  } # _font_family
+sub _font_size {
+	return 8 if ($^O =~ m!win32!i);
+	return 12 if ($^O =~ m!solaris!i);
+	return 10;
+}
 
 sub background { my ($self,$operand)=(shift,shift);
 	if (defined $operand){
@@ -468,7 +470,7 @@ sub Show { my $self = shift;
 	$self->packPropagate(0);
 	$self->configure("-background"=>$self->cget("-background"));
 	++$self->{_Shown};
-} # end of sub Show
+}
 
 
 =head2 METHOD forward
@@ -1444,7 +1446,8 @@ button is processed.
 =item -postNextButtonAction =>
 
 This is a reference to a function that will be dispatched after the Next
-button is processed.
+button is processed. The function is called after the application has logically
+advanced to the next page, but before the next page is drawn on screen.
 
 =item -preBackButtonAction =>
 
@@ -1623,7 +1626,7 @@ Wizard; set-up; setup; installer; uninstaller; install; uninstall; Tk; GUI.
 
 Copyright (c) Daniel T Hable, 2/2002.
 
-Copyright (C) Lee Goddard, 11/2002 - 05/2005 ff
+Copyright (C) Lee Goddard, 11/2002 - 04/2006 ff
 
 Patches Copyright (C) Martin Thurn 2005.
 

@@ -1,6 +1,13 @@
 Tk::Wizard CHANGES LOG
 ----------------------
 
+VERSION 1.93 22 April 2006
+
+	* Patch by Martin Thurn: sorry it's late:
+	* Wizard.pm: fix a typo "image_idr"
+ 	* Wizard.pm: don't complain about image_dir if the user has specified their own images
+	* Wizard.pm: add a sentence of pod for postNextButtonAction
+
 VERSION 1.92
 
 	* Patch by Martin Thurn: thanks!
@@ -8,10 +15,9 @@ VERSION 1.92
 	* in Installer.pm, eliminate the big empty space on the licence_page
 	* in Wizard.pm, make all of the user portion (but none of the button/borders) expand when the window is resized
 
-VERSION 1.90
+VERSION 1.90 May 2005
 	
-	May 2005
-	Um...
+	Um... had my first child, can't remember what the patch was.
 	
 VERSION 1.08
 

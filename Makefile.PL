@@ -7,7 +7,7 @@ my $prereq = {
 	"File::Path" => 0.1,
 };
 
-if ($^O =~ m/(mswin32|cygwin)/i) {
+if ($^O =~ m/win/i) {
 	$prereq->{'Win32::TieRegistry'} = 0.1;
 	$prereq->{'Win32::Shortcut'} = 0.03;
 	eval 'require Win32;';
@@ -30,7 +30,7 @@ WriteMakefile(
 	'ABSTRACT' => 'Create wizards with Perl-Tk',
 	'DISTNAME' => 'Tk-Wizard-Bases',
 	'NAME' => 'Tk::Wizard',
-	'VERSION'	=> 1.92,
+	'VERSION'	=> 1.93,
 	'PREREQ_PM' => $prereq,
 	(
 		$] >= 5.005 ?    ## Add these new keywords supported since 5.005

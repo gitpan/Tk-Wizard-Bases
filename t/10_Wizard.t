@@ -4,15 +4,18 @@ use ExtUtils::testlib;
 use Test::More no_plan;
 
 BEGIN {
+	use lib '../lib';
 	use_ok('Tk::Wizard')
 };
 
 my $VERSION = do { my @r = (q$Revision: 2.1 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 use strict;
-use Cwd;
 use FileHandle;
 autoflush STDOUT 1;
+use Cwd;
+
+my $root = cwd =~ /\/t$/? '..' : '.';
 
 use vars qw/$GET_DIR $user_chosen_dir $SPLASH/;
 
@@ -26,7 +29,7 @@ foreach my $style ('top', '') {
 	my $wizard = new Tk::Wizard(
 		-title 		=> "Test v$VERSION For Wizard $Tk::Wizard::VERSION",
 		-style		=> $style,
-		-image_dir	=> 'lib/Tk/Wizard/images/',
+		-image_dir	=> $root.'/lib/Tk/Wizard/images/',
 	);
 	isa_ok($wizard, "Tk::Wizard");
 	$wizard->configure(
@@ -150,7 +153,7 @@ sub page_text_textbox2 { my $wizard = shift;
 	my $frame = $wizard->text_frame(
 		-wait		=> $WAIT,
 		-title		=>"2: Text from filename",
-		-boxedtext 	=> 'perl_licence_blab.txt',
+		-boxedtext 	=> $root.'/perl_licence_blab.txt',
 	);
 	return $frame;
 }
