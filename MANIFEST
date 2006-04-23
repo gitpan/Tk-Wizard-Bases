@@ -1,14 +1,6 @@
 ChangeLog
 lib/Tk/Wizard.pm
-lib/Tk/Wizard/images/done.gif
-lib/Tk/Wizard/images/images.txt
-lib/Tk/Wizard/images/todo.gif
-lib/Tk/Wizard/images/wizard_blue.gif
-lib/Tk/Wizard/images/wizard_blue_top.gif
-lib/Tk/Wizard/images/WizModernImage.bmp
-lib/Tk/Wizard/images/WizModernImage2.bmp
-lib/Tk/Wizard/images/WizModernSmallImage.bmp
-lib/Tk/Wizard/images/WizModernSmallImage2.bmp
+lib/Tk/Wizard/Image.pm
 lib/Tk/Wizard/Installer.pm
 lib/Tk/Wizard/Installer/Win32.pm
 Makefile.PL
@@ -17,6 +9,7 @@ META.yml
 perl_licence_blab.txt
 README
 TODO
+t/05_Wizard.t
 t/20_bad_arg.t
 t/50_Installer.t
 t/30_pb.t

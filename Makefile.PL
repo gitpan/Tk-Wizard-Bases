@@ -26,11 +26,14 @@ if ($^O =~ m/win/i) {
 	}
 }
 
+
+warn "\nSome of these test fail with Tk dumps that baffle me.\nAny help appreciated.\n\n";
+
 WriteMakefile(
 	'ABSTRACT' => 'Create wizards with Perl-Tk',
 	'DISTNAME' => 'Tk-Wizard-Bases',
 	'NAME' => 'Tk::Wizard',
-	'VERSION'	=> 1.93,
+	'VERSION'	=> 1.94,
 	'PREREQ_PM' => $prereq,
 	(
 		$] >= 5.005 ?    ## Add these new keywords supported since 5.005

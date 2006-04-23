@@ -2,6 +2,7 @@
 
 my $VERSION = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
+use lib '../lib';
 use Cwd;
 use ExtUtils::testlib;
 use Test::More no_plan;
@@ -16,10 +17,6 @@ our $bar;	# Progress bar
 
 my $wizard = new Tk::Wizard(
 	-title => "ProgressBar Test",
-	-image_dir	=> 'lib/Tk/Wizard/images/',
-	-imagepath => "./Wizard/images/wizard_blue.gif",
-	-style	=> 'top',
-	-topimagepath => "./Wizard/images/wizard_blue_top.gif",
 );
 isa_ok($wizard, "Tk::Wizard");
 $wizard->configure(

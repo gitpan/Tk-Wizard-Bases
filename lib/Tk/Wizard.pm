@@ -7,15 +7,18 @@ Tk::Wizard - GUI for step-by-step interactive logical process
 =cut
 
 use vars qw/$VERSION/;
-$VERSION = do { my @r = (q$Revision: 1.93 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = do { my @r = (q$Revision: 1.94 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
+use lib '../';
 use Carp;
 use Config;
 use Cwd;
 use Tk;
 use Tk::DirTree;
+use Tk::Wizard::Image;
 use File::Path;
 use Tk::ROText;
+
 BEGIN {
 	require Exporter;	   		# Exporting Tk's MainLoop so that
 	@ISA = ( "Exporter",);	   # I can just use strict and Tk::Wizard without
@@ -38,7 +41,6 @@ use vars qw/%LABELS/;
 	FINISH => "Finish",	CANCEL => "Cancel",
 	HELP => "Help",		OK => "OK",
 );
-
 
 =head1 SYNOPSIS
 
@@ -68,6 +70,12 @@ To avoid 50 lines of SYNOPSIS, please see the files included with the
 distribution in the test directory: F<t/*.t>.  These are just Perl
 files that are run during the C<make test> phase of installation: you
 may rename them without harm once you have installed the module.
+
+=head1 CHANGES
+
+The optoin C<-image_dir> has been deprecated, and the once-used binary
+images have been dropped from the distribution in favour of Base64-
+encoded images.
 
 =head1 DEPENDENCIES
 
@@ -139,35 +147,23 @@ C<-topimagepath>, below).
 
 =item Switch: -imagepath
 
-Path to an image file that will be displayed on the left-hand side
-of the screen.  Dimensions are not constrained (yet).
-
-Notes:
+Path to an image that will be displayed on the left-hand side
+of the screen.  (Dimensions are not constrained.) One of either:
 
 =over 4
 
 =item *
 
-This is a C<Tk::Photo> object without the format being specified
-- this has been tested only on GIF and JPEG.
+Path to a file from which to construct a L<Tk::Photo|Tk::Photo>
+object without the format being specified;
+No checking is done, but paths ought to be absolute, as no effort
+is made to maintain or restore any initial current working directory.
 
 =item *
 
-No checking is done, but paths ought to be absolute, as no effort is made to
-maintain or restore any initial current working directory.
-
-=item *
-
-The supplied images F<wizard_blue.gif> and F<wizard_blue_top.gif> are
-used by default, and are expected in the directory specified in C<-image_dir>,
-explained below.
-
-If you supply different images you may have to set the Wizard's C<-width> and
-C<-height> properties, as there is (currently) no image size-checking performed.
-
-A large number of nicely-sized Wizard images -- some old, some new --
-by Pál Kornél can be found via L<http://www.kornelpal.hu/wizardimages/>
--- I<Köszönöm>, Kornél.
+Base64-encoded images to pass in the C<-data> field of the
+L<Tk::Photo|Tk::Photo> object. This is the default form, and a couple
+of unused images are supplied: see L<Tk::Wizard::Image>.
 
 =back
 
@@ -182,7 +178,7 @@ this filepath specifies
 will be displayed in the top-right corner of the screen. Dimensions are not
 restrained (yet), but only 50x50 has been tested.
 
-Please see notes for the C<-imagepath> entry and C<-image_dir>.
+Please see notes for the C<-imagepath>>.
 
 =item Name:   nohelpbutton
 
@@ -217,11 +213,7 @@ Disables display of the C<-tag_text>, above.
 
 =item -image_dir
 
-Base directory in which to find images required by this module:
-defaults to C<$Config::Config{sitelibexp}."/Tk/Wizard/images/">,
-which is where the installation process is intended to install them.
-This is only used if C<-topimagepath> and C<-imagepath> are not
-supplied.
+Deprecated. Supply C<-imagepath> and/or C<-topimagepath>.
 
 =back
 
@@ -230,10 +222,10 @@ Please see also L<ACTION EVENT HANDLERS>.
 =cut
 
 sub Populate { my ($cw, $args) = @_;
-               my $sFontFamily = &_font_family();
-               my $iFontSize = &_font_size();
-               my $sTagTextDefault = 'Perl Wizard';
-               my $iTagWidthDefault = $iFontSize * length($sTagTextDefault) / 1.5;
+	my $sFontFamily = &_font_family();
+	my $iFontSize = &_font_size();
+	my $sTagTextDefault = 'Perl Wizard';
+	my $iTagWidthDefault = $iFontSize * length($sTagTextDefault) / 1.5;
     $cw->SUPER::Populate($args);
     $cw->ConfigSpecs(
 # ?		-title			=> ['SELF','title','Title','Generic Wizard'],
@@ -241,11 +233,10 @@ sub Populate { my ($cw, $args) = @_;
 		-command    	=> ['CALLBACK', undef, undef, undef ],
 #		-foreground 	=> ['PASSIVE', 'foreground','Foreground', 'black'],
 		-background 	=> ['METHOD', 'background','Background',
-		$^O=~/(win)/i? 'SystemButtonFace':undef],
-		-style			=> ['PASSIVE',"style","Style","95"],
-		-imagepath		=> ['PASSIVE','imagepath', 'Imagepath', undef],
-		-image_dir		=> ['PASSIVE','image_dir', 'Image_Dir', undef],
-		-topimagepath	=> ['PASSIVE','topimagepath', 'Topimagepath', undef],
+		$^O=~/(MSWin32|cygwin)/i? 'SystemButtonFace':undef],
+		-style			=> ['PASSIVE',"style","Style","top"],
+		-imagepath		=> ['PASSIVE','imagepath', 'Imagepath', \$Tk::Wizard::Image::LEFT{WizModernImage}],
+		-topimagepath	=> ['PASSIVE','topimagepath', 'Topimagepath', \$Tk::Wizard::Image::TOP{WizModernSmallImage}],
 		# event handling references
 		-nohelpbutton			=> ['PASSIVE',undef,undef,undef],
 		-preNextButtonAction    => ['PASSIVE',undef,undef,undef],
@@ -262,37 +253,19 @@ sub Populate { my ($cw, $args) = @_;
 		-tag_width				=> ['PASSIVE', "tag_width", "TagWidth", $iTagWidthDefault],
 	);
 
-	if (not exists $args->{-imagepath} or not exists $args->{-topimagepath}) {
-		# Martin Thurn: don't complain about image_dir if the user has specified
-		# 				their own explicit -imagepath and -topimagepath.
-		if (not $args->{-image_dir}){
-			$args->{-image_dir} = $Config{sitelibexp}."/Tk/Wizard/images/";
-		}
-		if (not -d $args->{-image_dir}){
-			confess "No such dir as -image_dir ".$args->{-image_dir};
-		}
+	if (exists $args->{-imagepath} and not -e $args->{-imagepath}){
+		confess "Can't find file at -imagepath: ".$args->{-imagepath};
 	}
-
-	if (not exists $args->{-imagepath}
-	or !-e $args->{-imagepath}){
-		warn "# Can't find file at -imagepath, defaulting (was $args->{-imagepath})." if exists $args->{-imagepath} and $^W;
-		$args->{-imagepath} = $args->{-image_dir}."wizard_blue.gif";
-		confess "Bad installation! Missing default image $args->{-imagepath}" if !-e $args->{-imagepath};
+	if (exists $args->{-topimagepath} and not -e $args->{-topimagepath}){
+		confess "Can't find file at -topimagepath: ".$args->{-topimagepath};
 	}
-	if (not exists $args->{-topimagepath}
-	or !-e $args->{-topimagepath}){
-		warn "# Can't find file at -topimagepath, defaulting (was $args->{-topimagepath})." if exists $args->{-topimagepath}  and $^W;
-		$args->{-topimagepath} = $args->{-image_dir}."wizard_blue_top.gif";
-		confess  "Missing default image $args->{-topimagepath}" if !-e $args->{-topimagepath};
-	}
+	$cw->{-imagepath}		= $args->{-imagepath};
+	$cw->{-topimagepath}	= $args->{-topimagepath};
 
 	$cw->{wizardPageList}	= [];
 	$cw->{wizardPagePtr}	= 0;
 	$cw->{wizardFrame}		= 0;
-	$cw->{-image_dir}		= $args->{-image_dir}		|| "";
-	$cw->{-imagepath}		= $args->{-imagepath}		|| "";
-	$cw->{-topimagepath}	= $args->{-topimagepath}	|| "";
-	$cw->{-style}			= $args->{-style} 			|| "95";
+	$cw->{-style}			= $args->{-style} || 'top';
 	$cw->{background_userchoice} = $args->{-background} || $cw->ConfigSpecs->{-background}[3];
 	$cw->{background} 		= $cw->{background_userchoice};
 
@@ -301,6 +274,7 @@ sub Populate { my ($cw, $args) = @_;
 	$args->{-width } = ($args->{-style} eq 'top'? 500 : 570) unless $args->{-width};
 	$args->{-height} = 370 unless $args->{-height};
 	# $cw->overrideredirect(1);
+
 	my $buttonPanel = $cw->Frame;
 	# right margin
 	$buttonPanel->Frame(-width=>10)->pack( -side => "right", -expand => 0,-pady=>10);
@@ -328,7 +302,7 @@ sub Populate { my ($cw, $args) = @_;
 
 	# Tag text
 	$args->{-tag_text} = $sTagTextDefault unless exists $args->{-tag_text};
-        $iTagWidthDefault = $iFontSize * length($args->{-tag_text}) / 1.5;
+	$iTagWidthDefault = $iFontSize * length($args->{-tag_text}) / 1.5;
 	$args->{-tag_width} = $iTagWidthDefault unless exists $args->{-tag_width};
 	# Container for line/tag
 	my $tagbox = $cw->Frame(
@@ -337,17 +311,17 @@ sub Populate { my ($cw, $args) = @_;
 		-height => 12,
 	)->pack(qw/-side bottom -fill x/);
 
-               $cw->fontCreate('TAG',
-                               -family => $sFontFamily,
-                               -size => $iFontSize,
-                               -weight => 'bold',
-                              );
+	$cw->fontCreate('TAG',
+		-family => $sFontFamily,
+		-size => $iFontSize,
+		-weight => 'bold',
+	);
 	$cw->{tagtext} = $tagbox->Canvas(
-                                         -relief => 'flat',
-                                         -border => 1,
-                                         -height => $iFontSize * 1.5,
-                                         -width => $args->{-tag_width},
-	)->pack(qw/-side left -anchor w/);
+		-relief => 'flat',
+		-border => 1,
+		-height => $iFontSize * 1.5,
+		-width => $args->{-tag_width},
+	)->pack(-side=>'left', -anchor=>'e');
 	$cw->{tagtext}->createText(4,7,-text=>$args->{-tag_text},-fill=>'#999999',-anchor=>'w',-font=>'TAG',);
 	$cw->{tagtext}->createText(4,9,-text=>$args->{-tag_text},-fill=>'white',-anchor=>'w',-font=>'TAG',);
 	$cw->{tagtext}->createText(4,8,-text=>$args->{-tag_text},-fill=>'gray',-anchor=>'w',-font=>'TAG',);
@@ -357,16 +331,16 @@ sub Populate { my ($cw, $args) = @_;
 		-width => $cw->cget(-width)||500,
 		-background=>$cw->cget(-background),
 		qw/ -relief groove -bd 1 -height 2/,
-	)->pack(qw/-side left -anchor e/);
+	)->pack(-side=>'left', -anchor=>'e');
 
 	# Desktops for dir select: thanks to Slaven Rezic who also suggested SHGetSpecialFolderLocation for Win32. l8r
-	if ($^O =~ /(win)/i and -d $ENV{USERPROFILE}."/Desktop"){
+	if ($^O =~ /(MSWin32|cygwin)/i and -d "$ENV{USERPROFILE}/Desktop"){
 		# use OLE;
-		$cw->{desktop_dir} = $ENV{USERPROFILE}."/Desktop"
+		$cw->{desktop_dir} = "$ENV{USERPROFILE}/Desktop"
 	} elsif (-d "$ENV{HOME}/Desktop"){
-		$cw->{desktop_dir} = $ENV{HOME}."/Desktop";
+		$cw->{desktop_dir} = "$ENV{HOME}/Desktop";
 	} elsif (-d "$ENV{HOME}/.gnome-desktop"){
-		$cw->{desktop_dir} = $ENV{HOME}."/.gnome-desktop";
+		$cw->{desktop_dir} = "$ENV{HOME}/.gnome-desktop";
 	}
 	# Font used for &blank_frame titles
 	$cw->fontCreate('TITLE_FONT', -family => $sFontFamily, -size => $iFontSize*1.5, -weight => 'bold');
@@ -387,14 +361,14 @@ sub _font_family {
 	return 'verdana' if ($^O =~ m!win32!i);
 	return 'helvetica' if ($^O =~ m!solaris!i);
 	return 'helvetica';
-}
+} # _font_family
 
 # Private method: returns a font size suitable for the operating system.
 sub _font_size {
 	return 8 if ($^O =~ m!win32!i);
 	return 12 if ($^O =~ m!solaris!i);
 	return 10;
-}
+} # _font_family
 
 sub background { my ($self,$operand)=(shift,shift);
 	if (defined $operand){
@@ -443,7 +417,7 @@ sub addPage { my ($self, @pages) = (shift,@_);
 
 	C<wizard>->Show()
 
-This method must be dispatched before the Wizard will be displayed,
+This method must be called before the Wizard will be displayed,
 and must preced the C<MainLoop> call.
 
 =cut
@@ -452,6 +426,7 @@ sub Show { my $self = shift;
 	if ($^W and $#{$self->{wizardPageList}}==0){
 		warn "# Showing a Wizard that is only one page long";
 	}
+	return if exists $self->{_Shown};
 	# The DirSelectPage contains some SERIOUSLY convoluted code
 	# to create and navigate the DirTree, including chdirs all
 	# over the place.  So, before doing any chdir, we need to
@@ -462,15 +437,13 @@ sub Show { my $self = shift;
 
 	$self->resizable( 0, 0)	unless $self->{-resizable} and $self->{-resizable} =~/^(1|yes|true)$/i;
 	$self->withdraw;                # position in screen center
-           # print STDERR " before Popup\n";
 	$self->Popup;
-           # print STDERR " after Popup\n";
 	$self->transient;               # forbid minimize
 	$self->protocol( WM_DELETE_WINDOW => [ \&CloseWindowEventCycle, $self, $self]);
 	$self->packPropagate(0);
 	$self->configure("-background"=>$self->cget("-background"));
 	++$self->{_Shown};
-}
+} # end of sub Show
 
 
 =head2 METHOD forward
@@ -510,25 +483,29 @@ sub backward { my $self=shift;
 # Called by Show().
 #
 sub initial_layout { my $self = shift;
-	if ($^W and $self->cget(-style) eq 'top' and not $self->cget(-topimagepath)){
-		warn "# Wizard has -style=>top but not -topimagepath is defined";
-	}
 	# Wizard 98/95 style
 	if ($self->cget(-style) eq '95' or $self->{wizardPagePtr}==0){
-		if ($self->cget(-imagepath)){
-			$self->Photo( "sidebanner",  -file => $self->cget(-imagepath));
+		my $im = $self->cget(-imagepath);
+		if (not ref $im){
+			$self->Photo( "sidebanner", -file => $im );
 			$self->{left_object} = $self->Label( -image => "sidebanner")->pack( -side => "top", -anchor => "n");
-		} else {
-			$self->{left_object} = $self->Frame(-width=>100)->pack(qw/-side left -anchor w -expand 1 -fill both/);
+		}
+		else {
+			$self->Photo( "sidebanner", -data => $$im );
+			$self->{left_object} = $self->Label( -image => "sidebanner")->pack( -side => "top", -anchor => "n");
+#			$self->{left_object} = $self->Frame(-width=>100)->pack(qw/-side left -anchor w -expand 1 -fill both/);
 		}
 	}
 	# Wizard 2k style - builds the left side of the wizard
 	else {
-		if ($self->cget(-topimagepath)){
-			$self->Photo( "sidebanner", -file => $self->cget(-topimagepath));
-			$self->{left_object} = $self->Label( -image => "sidebanner")->pack( -side => "top", -anchor => "e", );
+		my $im = $self->cget(-topimagepath);
+		if (not ref $im){
+			$self->Photo( "topbanner", -file => $im );
+			$self->{left_object} = $self->Label( -image => "topbanner")->pack( -side => "top", -anchor => "e", );
 		} else {
-			$self->{left_object} = $self->Frame( -width => 250 )->pack( -side => "top", -anchor => "n", );
+			$self->Photo( "topbanner", -data => $$im );
+			$self->{left_object} = $self->Label( -image => "topbanner")->pack( -side => "top", -anchor => "e", );
+#			$self->{left_object} = $self->Frame( -width => 250 )->pack( -side => "top", -anchor => "n", );
 		}
 	}
 }
@@ -547,11 +524,11 @@ sub render_current_page { my $self = shift;
 	){
 		$self->{tagtext}->packForget;
 		$self->{tagline}->packForget;
-		$self->{tagtext}->pack(qw/-side left -anchor w/);
-		$self->{tagline}->pack(qw/-side left -anchor e/);
+		$self->{tagtext}->pack(-side=>'left', -anchor=>'e');
+		$self->{tagline}->pack(-side=>'left', -anchor=>'e');
 	} else {
 		$self->{tagtext}->packForget;
-		$self->{tagline}->pack(qw/-side left -anchor e/);
+		$self->{tagline}->pack(-side=>'left', -anchor=>'e');
 	}
 
 	if (
@@ -562,13 +539,17 @@ sub render_current_page { my $self = shift;
 			$frame_pack{-expand} = 1;
 			$frame_pack{-fill} = 'both';
 		}
-	} elsif ($self->cget(-style) eq 'top'){
+	}
+	elsif ($self->cget(-style) eq 'top'){
 		$self->{left_object}->packForget;
 	}
 	# xxx
-	$self->configure("-background"=>$self->cget("-background"));
+	$self->configure(-background=>$self->cget("-background"));
 	$self->{nextButton}->focus(); # Default focus possibly over-ridden in wizardFrame
-	$self->{wizardFrame}->packForget if $self->{wizardFrame};
+	$self->{wizardFrame}->packForget if $self->{wizardFrame} and ref $self->{wizardFrame} ne 'CODE';
+	if (not defined $self->{wizardPageList}->[0]){
+		confess 'render_current_page called without any frames: did you add frames to the wizard?';
+	}
 	$self->{wizardFrame} = $self->{wizardPageList}->[$self->{wizardPagePtr}]->()->pack(%frame_pack);
 }
 
@@ -678,7 +659,12 @@ sub blank_frame { my ($self,$args) = (shift,{@_});
 	){
 		my $top_frame = $frame->Frame(-background=>'white')->pack(-fill=>'x',-side=>'top',-anchor=>'e');
  		my $p = $top_frame->Frame(-background=>'white');
-		$p->Photo( "topimage", -file => $self->cget(-topimagepath));
+		my $photo = $self->cget(-topimagepath);
+		if (ref $photo){
+			$p->Photo( "topimage", -data => $$photo );
+		} else {
+			$p->Photo( "topimage", -file => $photo );
+		}
 		$p->Label( -image => "topimage", -background=>'white')->pack( -side=>"right", -anchor=>"e", -padx=>5,-pady=>5);
 		$p->pack(-side=>'right',-anchor=>'n');
 		my $title_frame = $top_frame->Frame(-background=>'white')->pack(
@@ -1139,10 +1125,8 @@ callback of the I<Next> button at the end of the task.
 
 =item -done_photo
 
-Optional: both C<Tk::Photo> objects, the former displayed before an item on the taks list has been executed,
+In progress. Optional: both C<Tk::Photo> objects, the former displayed before an item on the taks list has been executed,
 which is changed to the latter after completion of the item. If not provided, then not displayed.
-
-If I knew more about TK bitmaps, or any bitmaps other than Vic-20, I'd extend this to have defaults.
 
 =item -label_frame_title
 
@@ -1449,6 +1433,7 @@ This is a reference to a function that will be dispatched after the Next
 button is processed. The function is called after the application has logically
 advanced to the next page, but before the next page is drawn on screen.
 
+
 =item -preBackButtonAction =>
 
 This is a reference to a function that will be dispatched before the Previous
@@ -1626,7 +1611,7 @@ Wizard; set-up; setup; installer; uninstaller; install; uninstall; Tk; GUI.
 
 Copyright (c) Daniel T Hable, 2/2002.
 
-Copyright (C) Lee Goddard, 11/2002 - 04/2006 ff
+Copyright (C) Lee Goddard, 11/2002 - 05/2005 ff
 
 Patches Copyright (C) Martin Thurn 2005.
 

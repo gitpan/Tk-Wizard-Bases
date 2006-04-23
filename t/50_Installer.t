@@ -36,8 +36,6 @@ if (!-e '__perlwizardtest'){
 
 my $wizard = new Tk::Wizard::Installer(
 	-title => "Installer Test",
-	-style	=> 'top',
-	-image_dir	=> 'lib/Tk/Wizard/images/',
 );
 
 print ref $wizard eq "Tk::Wizard::Installer"? "ok 2\n" : "not ok 2\n";

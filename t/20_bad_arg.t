@@ -12,8 +12,6 @@ print "ok 1\n";
 
 my $wizard = new Tk::Wizard(
 	-title => "Bad Argument Test",
-	-image_dir	=> 'lib/Tk/Wizard/images/',
-	-style	=> 'top',
 );
 
 print ref $wizard eq "Tk::Wizard"? "ok 2\n" : "not ok 2\n";

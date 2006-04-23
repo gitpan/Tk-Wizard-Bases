@@ -29,7 +29,6 @@ foreach my $style ('top', '') {
 	my $wizard = new Tk::Wizard(
 		-title 		=> "Test v$VERSION For Wizard $Tk::Wizard::VERSION",
 		-style		=> $style,
-		-image_dir	=> $root.'/lib/Tk/Wizard/images/',
 	);
 	isa_ok($wizard, "Tk::Wizard");
 	$wizard->configure(
@@ -73,14 +72,14 @@ foreach my $style ('top', '') {
 		-variable	=> \$user_chosen_dir,
 	);
 	is($GET_DIR, 7);
+
 	my $p = $wizard->addPage(
 		sub {
 			$wizard->blank_frame (
 				-wait		=> $WAIT,
 				-title		=>"Finished",
 				-subtitle 	=> "Please press Finish to leave the Wizard.",
-				-text => "By the way, you selected the directory $user_chosen_dir.\n\n"
-				."If you saw some error messages, they came from Tk::DirTree, and show "
+				-text => "If you saw some error messages, they came from Tk::DirTree, and show "
 				."that some of your drives are inacessible - perhaps a CD-ROM drive without "
 				."media.  Such warnings can be turned off - please see the documentation for details."
 			);
