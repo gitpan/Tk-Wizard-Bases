@@ -6,8 +6,7 @@ Tk::Wizard - GUI for step-by-step interactive logical process
 
 =cut
 
-use vars qw/$VERSION/;
-$VERSION = do { my @r = (q$Revision: 1.94 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$Tk::Wizard::VERSION = do { my @r = (q$Revision: 1.941 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 use lib '../';
 use Carp;
@@ -47,10 +46,9 @@ use vars qw/%LABELS/;
 	use Tk::Wizard;
 	my $wizard = new Tk::Wizard(
 		-title		=> "TitleBar Title",
-		-imagepath	=> "/image/for/the/left/panel.gif",
 	);
-	$wizard->configure( ...add event handlers... );
-	$wizard->cget( ...whatever... );
+	$wizard->configure( -property=>'value');
+	$wizard->cget( "-property");
 	$wizard->addPage(
 		... code-ref to anything returning a Tk::Frame ...
 	);
@@ -75,7 +73,7 @@ may rename them without harm once you have installed the module.
 
 The optoin C<-image_dir> has been deprecated, and the once-used binary
 images have been dropped from the distribution in favour of Base64-
-encoded images.
+encoded images. More and other details in F<ChangeLog>.
 
 =head1 DEPENDENCIES
 
@@ -112,6 +110,15 @@ hot on advertising widgets.
 NB: B<THIS IS STILL AN ALPHA RELEASE: ALL CONTRIBUTIONS ARE WELCOME!>
 
 Please also see L<IMPLEMENTATION NOTES>.
+
+=head1 CAVEATS
+
+If you do not call the C<Wizard>'s C<destroy> method, you will receive errors.
+This is usually best done as a callback to C<-finishButtonAction>:
+
+	$wizard->configure(
+		-finishButtonAction  => sub { $wizard->destroy;},
+	);
 
 =head1 STANDARD OPTIONS
 
@@ -246,7 +253,8 @@ sub Populate { my ($cw, $args) = @_;
 		-preHelpButtonAction    => ['PASSIVE',undef,undef,undef],
 		-helpButtonAction       => ['PASSIVE',undef,undef,undef],
 		-postHelpButtonAction   => ['PASSIVE',undef,undef,undef],
-		-finishButtonAction     => ['PASSIVE',undef,undef,undef],
+		-preFinishButtonAction	=> ['PASSIVE',undef,undef, undef ],
+		-finishButtonAction     => ['PASSIVE',undef,undef, undef ],
 		-preCancelButtonAction 	=> ['CALLBACK',undef, undef, sub { &DIALOGUE_really_quit($cw) }],
 		-preCloseWindowAction	=> ['CALLBACK',undef, undef, sub { &DIALOGUE_really_quit($cw) }],
 		-tag_text				=> ['PASSIVE', "tag_text", "TagText", $sTagTextDefault],
@@ -355,6 +363,7 @@ sub Populate { my ($cw, $args) = @_;
 	$cw->fontCreate('DEFAULT_FONT', -family => $sFontFamily, -size => $iFontSize);
 	$cw->{defaultFont} = 'DEFAULT_FONT';
 }
+
 
 # Private method: returns a font family name suitable for the operating system.
 sub _font_family {
@@ -831,12 +840,12 @@ sub text_frame { my ($self,$args) = (shift,{@_});
 # Parameters:    The dispatch function is an internal function used to determine if the dispatch back reference
 #         is undefined or if it should be dispatched. Undefined methods are used to denote dispatchback
 #         methods to bypass. This reduces the number of method dispatchs made for each handler and also
-#         increased the usability of the set methods above when trying to unregister event handlers.
+#         increased the usability of the set methods when trying to unregister event handlers.
 #
 sub dispatch { my $handler = shift;
 	return (!($handler->())) if defined $handler;
 	return 0;
-} # end of sub dispatch
+}
 
 #
 # Method:      NextButtonEventCycle
@@ -852,16 +861,20 @@ sub NextButtonEventCycle { my $self = shift;
 	$self->{wizardPagePtr} = $#{$self->{wizardPageList}} if( $self->{wizardPagePtr} >= $#{ $self->{wizardPageList}});
 	$self->{backButton}->configure( -state => "normal");
 	if( $self->{nextButton}->cget("-text") eq $LABELS{FINISH}) {
+		if ( dispatch( $self->cget(-preFinishButtonAction))) { return; }
 		if ( dispatch( $self->cget(-finishButtonAction))) { return; }
 		$self->CloseWindowEventCycle();
+		# Can't do anything now, we're dead
+		$self->destroy;
+	} else {
+		if ($self->{wizardPagePtr} == $#{ $self->{wizardPageList}}) {
+			$self->{cancelButton}->packForget() if $self->{cancelButton};
+			$self->{backButton}->packForget() if $self->{backButton};
+			$self->{nextButton}->configure( -text => $LABELS{FINISH}) if $self->{nextButton};
+		}
+		$self->render_current_page;
+		if (dispatch( $self->cget(-postNextButtonAction))) { return; }
 	}
-	if ($self->{wizardPagePtr} == $#{ $self->{wizardPageList}}) {
-		$self->{cancelButton}->packForget() if $self->{cancelButton};
-		$self->{backButton}->packForget() if $self->{backButton};
-		$self->{nextButton}->configure( -text => $LABELS{FINISH}) if $self->{nextButton};
-	}
-	$self->render_current_page;
-	if (dispatch( $self->cget(-postNextButtonAction))) { return; }
 }
 
 sub BackButtonEventCycle { my $self=shift;
@@ -899,9 +912,9 @@ the calling object's C<destroy> method is called, by default closing the Wizard.
 
 sub CloseWindowEventCycle { my ($self, $hGUI) = (shift,@_);
 	return if $self->Callback( -preCloseWindowAction => $self->{-preCloseWindowAction} );
-	$self->destroy;
 #	return if dispatch( $self->cget(-preCloseWindowAction));
-#	$hGUI->destroy;
+	# exit;
+	$hGUI->destroy if defined $hGUI;
 }
 
 
@@ -1123,10 +1136,15 @@ callback of the I<Next> button at the end of the task.
 
 =item -todo_photo
 
-=item -done_photo
+=item -doing_photo
 
-In progress. Optional: both C<Tk::Photo> objects, the former displayed before an item on the taks list has been executed,
-which is changed to the latter after completion of the item. If not provided, then not displayed.
+=item -ok_photo
+
+=item -error_photo
+
+In progress. Optional: all C<Tk::Photo> objects, displayed as appropriate.
+C<-ok_photo> is displayed if the task code refernce returns a true value, otherwise
+C<-error_photo> is displayed. These have defaults taken from L<Tk::Wizard::Image|Tk::Wizard::Image>.
 
 =item -label_frame_title
 
@@ -1143,13 +1161,13 @@ Optional: array-refernce to pass to the C<pack> method of the C<Frame> containin
 
 =back
 
-=head1 TASK LIST EXAMPLE
+=head2 TASK LIST EXAMPLE
 
-	$wizard->addTaskListPage(
-		-title => "Toy example",
-		-tasks => [
-			"Wait five seconds" => sub { warn "waiting for 5 ...."; sleep 5;  print "ok 8\n"},
-			"Wait ten seconds!" => sub { warn "waiting for 10...."; sleep 10; print "ok 9\n"},
+  $wizard->addTaskListPage(
+      -title => "Toy example",
+      -tasks => [
+	     	"Wait five seconds" => sub { sleep 5 },
+		 	"Wait ten seconds!" => sub { sleep 10 },
 		],
 	);
 
@@ -1177,23 +1195,19 @@ contains the task list. Default label is the boring C<Performing Tasks:>.
 
 sub page_taskList { my ($self,$args) = (shift,shift);
 	my @tasks;
-	if (not $args->{-todo_photo}){
-		warn "# No -todo_photo" if $^W;
-	} elsif  (!-r $args->{-todo_photo}
-		or not $self->Photo( "todo", -file => $args->{-todo_photo})){
-		warn "# Could not read -todo_photo at $args->{-todo_photo}" if $^W;
-		undef $args->{-todo_photo};
+	my @states = qw[ todo doing ok error ];
+	my $photos = {};
+
+	foreach my $state (@states){
+		if (not $args->{"-".$state."_photo"}){
+			  $photos->{$state} = $self->Photo($state, -data => $Tk::Wizard::Image::TASK_LIST{$state} );
+		}
+		elsif  (!-r $args->{"-".$state."_photo"} or not $self->Photo($state, -file => $args->{"-".$state."_photo"})){
+			warn "# Could not read -todo_photo at ".$args->{"-".$state."_photo"} if $^W;
+		}
 	}
-	if (not $args->{-done_photo}){
-		warn "# No -done_photo" if $^W;
-	} elsif (!-r $args->{-done_photo}
-	or !$self->Photo( "done", -file => $args->{-done_photo})){
-		warn "# Could not read $args->{-done_photo}" if $^W;
-		undef $args->{-done_photo};
-	}
-	$args->{-frame_pack} = [
-		qw/-expand 1 -fill x -padx 40 -pady 10/
-	] unless $args->{-frame_pack};
+
+	$args->{-frame_pack} = [ qw/-expand 1 -fill x -padx 40 -pady 10/ ] unless $args->{-frame_pack};
 	$args->{-frame_args} = [
 		-relief=>"flat",-bd=>0,
 		-label => $args->{-label_frame_title} || "Performing Tasks: ",
@@ -1201,25 +1215,34 @@ sub page_taskList { my ($self,$args) = (shift,shift);
 	] unless $args->{-frame_args};
 
 	my $frame = $self->blank_frame(
-		-title	  => $args->{-title} || "Performing Taks",
+		-title	  => $args->{-title} || "Performing Tasks",
 		-subtitle => $args->{-subtitle}  || "Please wait whilst the Wizard performs these tasks.",
 		-text	  => $args->{-text}  || "",
 		-wait	  => $args->{-wait} || undef,
 	);
+	my $main_bg = $frame->cget("-background");
+
 	if ($#{$args->{-tasks}}>-1){
-		my $task_frame = $frame->LabFrame(
-			@{$args->{-frame_args}}
-		)->pack(
-			@{$args->{-frame_pack}}
-		);
+		my $task_frame = $frame->LabFrame( @{$args->{-frame_args}} )->pack( @{$args->{-frame_pack}} );
+		$task_frame->configure(-background => $main_bg);
 
 		foreach ( my $i=0; $i<=$#{$args->{-tasks}}; $i+=2 ){
 			my $icn="-1";
-			my $p = $task_frame->Frame()->pack(-side=>'top',-anchor=>"w");
-			if (defined $args->{-todo_photo}){
-				$icn = $p->Label(-image=>"todo",-anchor=>"w")->pack(-side=>"left");
+			my $p = $task_frame->Frame(
+				-background => $main_bg,
+			)->pack(-side=>'top',-anchor=>"w");
+			if (exists $photos->{todo}){
+				$icn = $p->Label(
+					-image=>"todo",
+					-background => $main_bg,
+					-anchor=>"w")->pack(-side=>"left"
+				);
 			}
-			$p->Label(-text=>@{$args->{-tasks}}[$i],-anchor=>"w")->pack(-side=>"left");
+			$p->Label(
+				-text=>@{$args->{-tasks}}[$i],
+				-background => $main_bg,
+				-anchor=>"w")->pack(-side=>"left"
+			);
 			push @tasks, [$icn,@{$args->{-tasks}}[$i+1]];
 		}
 	} else {
@@ -1229,9 +1252,13 @@ sub page_taskList { my ($self,$args) = (shift,shift);
 	$self->{backButton}->configure(-state=>"disabled");
 	$frame->after( $args->{-delay} || 1000, sub {
 		foreach my $task (@tasks){
-			&{@$task[1]};
 			if (ref @$task[0]){
-				@$task[0]->configure(-image=>"done")
+				@$task[0]->configure(-image => "doing")
+			}
+			$self->update;
+			my $result = &{@$task[1]};
+			if (ref @$task[0]){
+				@$task[0]->configure(-image => $result? "ok" : "error")
 			}
 			$self->update;
 		}
@@ -1298,12 +1325,12 @@ sub page_multiple_choice { my ($self,$args) = (shift,shift);
 
 	foreach my $opt (@{$args->{-choices}}){
 		croak "Option in -choices array is not a hash!" if not ref $opt or ref $opt ne 'HASH';
-		croak "No -varialbe!" if not $opt->{-variable};
-		croak "-varialbe should be a reference!" if not ref $opt->{-variable};
+		croak "No -variable!" if not $opt->{-variable};
+		croak "-variable should be a reference!" if not ref $opt->{-variable};
 		my $b = $content->Checkbutton(
 			-text		=> $opt->{-title},
 			-justify	=> 'left',
-			-relief		=> $args->{-reflief}||'flat',
+			-relief		=> $args->{-relief}||'flat',
 			-font		=> "RADIO_BOLD",
 			-variable	=> $opt->{-variable},
 
@@ -1459,15 +1486,15 @@ button action.
 This is a reference to a function that will be dispatched after the Help
 button is processed.
 
+=item -preFinishButtonAction =>
+
+This is a reference to a function that will be dispatched just before the Finish
+button action.
+
 =item -finishButtonAction =>
 
 This is a reference to a function that will be dispatched to handle the Finish
 button action.
-
-=item -postFinishButtonAction =>
-
-This is a reference to a function that will be dispatched after the Finish
-button is processed.
 
 =item -preCancelButtonAction =>
 
@@ -1601,7 +1628,7 @@ Please see the file F<CHANGES.txt> included with the distribution.
 =head1 AUTHOR
 
 Lee Goddard (lgoddard@cpan.org) based on work Daniel T Hable.
-Minor fixes by Martin Thurn (mthurn@cpan.org).
+Thanks to Martin Thurn (mthurn@cpan.org) for support and patches.
 
 =head1 KEYWORDS
 

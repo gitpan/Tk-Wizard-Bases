@@ -1,11 +1,23 @@
 Tk::Wizard CHANGES LOG
 ----------------------
 
-VERSION 1.93 22 April 2006
+VERSION 1.941 23 April 2006
+	
+	* Wizard.pm: Added Martin's patch to by default support Base64 photos in TaskList
+	* Wizard.pm: Added to TaskList more photo states added state indicators
+	* Wizard.pm: Added POD for 'destroy'
+	* Wizard.pm: Remvoed POD for postFinishButtonAction
+	* Wizard.pm: Added preFinishButtonAction
+	* Wizard.pm: bug fix in NextButtonEventCycle: CloseWindowEventCycle ends logic,
+	  rather than falling through to the remainder of the next button actions.
+	
+VERSION 1.94 22 April 2006
 
 	* Patch by Martin Thurn: sorry it's late:
 	* Wizard.pm: fix a typo "image_idr"
- 	* Wizard.pm: don't complain about image_dir if the user has specified their own images
+ 	* Wizard.pm: Removed image_dir option
+ 	* Removed binary images in lib/Wizard/images
+ 	* Added Tk::Wizard::Image to supply Base 64 images
 	* Wizard.pm: add a sentence of pod for postNextButtonAction
 
 VERSION 1.92

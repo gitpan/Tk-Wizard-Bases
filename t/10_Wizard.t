@@ -19,7 +19,7 @@ my $root = cwd =~ /\/t$/? '..' : '.';
 
 use vars qw/$GET_DIR $user_chosen_dir $SPLASH/;
 
-our $WAIT = 2;
+our $WAIT = 1;
 
 #
 # Instantiate Wizard
