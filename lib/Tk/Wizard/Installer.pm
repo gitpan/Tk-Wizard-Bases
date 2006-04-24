@@ -1,31 +1,50 @@
 package Tk::Wizard::Installer;
 
-use vars qw/$VERSION/;
-$VERSION = do { my @r = (q$Revision: 1.92 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
-# 21 November 2005, patch supplied by Martin Thurn
+$Tk::Wizard::Installer::VERSION = do { my @r = (q$Revision: 1.931 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+# 24 April 2006
 
 =head1 NAME
 
 Tk::Wizard::Installer - building-blocks for a software install wizard
 
+=head1 SYNOPSIS
+
+	use Tk::Wizard::Installer 1.931;
+	ler->new( -title => "Installer Test", );
+	$wizard->addDownloadPage(
+		-wait 	=> undef,
+		#-on_error => sub { ... },
+		-no_retry => 1,
+		-files	=> {
+			'http://www.cpan.org/' 		=> './cpan_index1.html',
+			'http://www.cpan.org/' 		=> './cpan_index2.html',
+			'http://www.leegoddard.net' => './author.html',
+		},
+	);
+	$wizard->addPage( sub {
+		return $wizard->blank_frame(
+			-title=>"Finished",
+			-subtitle => "Please press Finish to leave the Wizard.",
+			-text => ""
+		);
+	});
+
 =cut
 
-BEGIN {
-	use strict;
-	use Carp;
-	use Cwd;
-	use File::Path;
-	use File::Copy;
-	use File::Spec;
-	use Tk::Wizard;
-	use Tk::ProgressBar;
-	use Tk::LabFrame;
-	require Tk::ErrorDialog;
-	require Exporter;
-	use vars qw/@ISA @EXPORT/;
-	@ISA = "Tk::Wizard";
-	@EXPORT = ("MainLoop");
-}
+use strict;
+use Carp;
+use Cwd;
+use File::Path;
+use File::Copy;
+use File::Spec;
+use Tk::Wizard;
+use Tk::ProgressBar;
+use Tk::LabFrame;
+require Tk::ErrorDialog;
+require Exporter;
+use vars qw/@ISA @EXPORT/;
+@ISA = "Tk::Wizard";
+@EXPORT = ("MainLoop");
 
 # See INTERNATIONALISATION
 
@@ -348,10 +367,21 @@ sub page_fileList { my ($self,$args) = (shift,shift);
 
 		$args->{-bar}->configure(-to => $self->pre_install_files($args) );
 		$self->install_files($args);
-
 		$self->{nextButton}->configure(-state=>"normal");
 		$self->{backButton}->configure(-state=>"normal");
-		$self->{nextButton}->invoke unless $args->{-wait};
+		#$self->{nextButton}->invoke unless $args->{-wait};
+
+		if ($args->{-wait}){
+			Tk::Wizard::fix_wait( \$args->{-wait} );
+#			$frame->after($args->{-wait},sub{$self->forward});
+			$frame->after(
+				$args->{-wait},sub {
+					$self->{nextButton}->configure(-state=>'normal');
+					$self->{nextButton}->invoke;
+				}
+			);
+		}
+
 	});
 	return $frame;
 }
@@ -532,7 +562,11 @@ default result of which is yet another confirmation of closure....
 If no C<-on_error> paramter is provided, the Wizard will continue even
 if it cannot download the requested data.
 
-=back
+=item -done_text
+
+Text to display when complete. Default: I<complete>.
+
+= back
 
 Would it be useful to impliment globbing for FTP URIs?
 
@@ -602,7 +636,7 @@ sub page_download{ my ($self,$args) = (shift,shift);
 			$args->{-bar}->configure( -to => scalar keys %{$args->{-files}} );
 
 			foreach my $uri (keys %{$args->{-files}} ){
-				warn "# Try $args->{-files}->{$uri}\n" if $^W;
+				warn "# Try $args->{-files}->{$uri}\n" if $self->{debug};
 				my ($uri_msg) = $uri =~ m/^\w+:\/{2,}[^\/]+(.*?)\/?$/;
 				$args->{file_label}->configure(-label=> $uri_msg || "Current File");
 				$args->{file_label}->update;
@@ -621,36 +655,53 @@ sub page_download{ my ($self,$args) = (shift,shift);
 			}
 
 			if (scalar keys %{$args->{-files}}>0){
-				warn "# Files left: ",(scalar keys %{$args->{-files}}),"\n" if $^W;
+				warn "# Files left: ",(scalar keys %{$args->{-files}}),"\n" if $self->{debug};
 				if ($args->{-no_retry} or not $self->download_again(scalar keys %{$args->{-files}})){
-					warn "# Not trying again.\n" if $^W;
+					warn "# Not trying again.\n" if $self->{debug};
 					$self->{-failed} = $args->{-files};
 					$args->{-files} = {};
 				}
 			}
 		}
 
-		if (scalar keys %{$self->{-failed}}>0
-		and $args->{-on_error}){
-			warn "# Failed." if $^W;
+		if (scalar keys %{$self->{-failed}}>0 and $args->{-on_error}){
+			warn "# Failed." if $self->{debug};
 			if ( ref $args->{-on_error} eq 'CODE'){
-				warn "# Calling -on_error handler." if $^W;
+				warn "# Calling -on_error handler." if $self->{debug};
 				&{ $args->{-on_error} }
 			} elsif ($args->{-on_error}) {
-				warn "# Calling self/download_quit." if $^W;
+				warn "# Calling self/download_quit." if $self->{debug};
 				$self->download_quit( scalar keys %{$self->{-failed}} );
 			}
-		} else {
-			warn "# Failures: ",scalar keys %{$self->{-failed}},"\n";
+		}
+		else {
+			warn "# Failures: ",scalar keys %{$self->{-failed}},"\n" if $self->{debug};
 			foreach (keys %{$self->{-failed}}){
-				warn "# \t$_\n" if $^W;
+				warn "# \t$_\n" if $self->{debug};
 			}
 			$self->{-failed} = 0;
 		}
+		$args->{-bar}->packForget;
+		$args->{-file_bar}->packForget;
+		$args->{file_label}->packForget;
+		$all->packForget;
 
+		$frame->Label(
+			-text => $args->{-done_text} || "Finished",
+		)->pack(-fill => "both", -expand=>1);
+
+		# $self->{backButton}->configure(-state=>"normal");
 		$self->{nextButton}->configure(-state=>"normal");
-		$self->{backButton}->configure(-state=>"normal");
-		$self->{nextButton}->invoke unless $args->{-wait};
+		if ($args->{-wait}){
+			Tk::Wizard::fix_wait( \$args->{-wait} );
+#			$frame->after($args->{-wait},sub{$self->forward});
+			$frame->after(
+				$args->{-wait},sub {
+					$self->{nextButton}->configure(-state=>'normal');
+					$self->{nextButton}->invoke;
+				}
+			);
+		}
 	});
 
 	return $frame;
@@ -667,24 +718,25 @@ sub read_uri { my ($self,$args) = (shift,{@_});
     my ($proxy_user, $proxy_pass);
 	($self->{response}, $self->{bytes_transferred},$self->{errstr}) = (undef, 0, undef);
 
-    my $ua = new LWP::UserAgent;
-    $ua->agent($ENV{HTTP_proxy_agent} || ("$0/$VERSION " . $ua->agent));
+    my $ua = LWP::UserAgent->new;
+    $ua->timeout( $args->{timeout} || 10 );
+    $ua->agent($ENV{HTTP_PROXY_AGENT} || ("$0/$Tk::Wizard::Installer::VERSION " . $ua->agent));
 
     if (defined $args->{proxy}){
-        $proxy_user = $args->{http_proxy_user};
-        $proxy_pass = $args->{http_proxy_pass};
-        warn ("read_uri: calling env_proxy: $args->{http_proxy}") if $^W;
+        $proxy_user = $args->{HTTP_PROXY_USER};
+        $proxy_pass = $args->{HTTP_PROXY_PASS};
+        warn ("read_uri: calling env_proxy: $args->{http_proxy}") if $self->{debug};
         $ua->env_proxy;
-	} elsif (defined $ENV{HTTP_proxy}) {
-        $proxy_user = $ENV{HTTP_proxy_user};
-        $proxy_pass = $ENV{HTTP_proxy_pass};
-        warn ("read_uri: calling env_proxy: $ENV{HTTP_proxy}") if $^W;
+	} elsif (defined $ENV{HTTP_PROXY}) {
+        $proxy_user = $ENV{HTTP_PROXY_USER};
+        $proxy_pass = $ENV{HTTP_PROXY_PASS};
+        warn ("read_uri: calling env_proxy: $ENV{HTTP_proxy}") if $self->{debug};
         $ua->env_proxy;
     }
 
-    my $req = HTTP::Request->new(GET,$args->{uri});
+    my $req = HTTP::Request->new(GET => $args->{uri});
     if (defined $proxy_user and defined $proxy_pass) {
-        warn ("read_uri: calling proxy_authorization_basic($proxy_user, $proxy_pass)") if $^W;
+        warn ("read_uri: calling proxy_authorization_basic($proxy_user, $proxy_pass)") if $self->{debug};
         $req->proxy_authorization_basic($proxy_user, $proxy_pass);
     }
 
@@ -694,21 +746,21 @@ sub read_uri { my ($self,$args) = (shift,{@_});
  	($self->{response}, $self->{bytes_transferred}) = (undef, 0);
 	$self->{response} = $ua->request(
 		$req,
-		sub { &lwp_callback($args->{bar},@_) },
+		sub { &lwp_callback($self,$args->{bar},@_) },
 		, 4096
 	);
 
 	if ($self->{response} && $self->{response}->is_success) {
 		my ($dirs,$file) = $args->{target} =~ /^(.*?)([^\\\/]+)$/;
 		if ($dirs and $dirs!~/^\.{1,2}$/ and !-d $dirs){
-			mkpath $dirs or croak "Could not make path $d : $!";
+			mkpath $dirs or croak "Could not make path $dirs : $!";
 		}
 		unless (open OUT, ">$args->{target}") {
-			warn ("read_uri: Couldn't open $args->{target} for writing") if $^W;
+			warn ("read_uri: Couldn't open $args->{target} for writing") if $self->{debug};
 			$self->{errstr} = "Couldn't open $args->{target} for writing\n";
 			return;
 		}
-		warn "# Writing to $args->{target}...\n" if $^W;
+		warn "# Writing to $args->{target}...\n" if $self->{debug};
 		binmode OUT;
 		print OUT $self->{response}->content;
 		close OUT;
@@ -716,12 +768,12 @@ sub read_uri { my ($self,$args) = (shift,{@_});
     }
     if ($self->{response}) {
         warn ("read_uri: Error(1) reading $args->{uri}: ".$self->{response}->code." ".
-            $self->{response}->message) if $^W;
+            $self->{response}->message) if $self->{debug};
         $self->{errstr} = "Error(1) reading $args->{uri}: ".$self->{response}->code. " " .
             $self->{response}->message . "\n";
     }
     else {
-        warn ("read_uri: Error(2) reading $args->{uri} ") if $^W;
+        warn ("read_uri: Error(2) reading $args->{uri} ") if $self->{debug};
         $self->{errstr} = "Error(2) reading $args->{uri} 	\n";
     }
     return 0;
@@ -729,8 +781,7 @@ sub read_uri { my ($self,$args) = (shift,{@_});
 
 
 # c/o PPM.pm
-sub lwp_callback {
-	local $length;
+sub lwp_callback { my $self=shift;
 	my ($bar, $data, $res, $protocol) = @_;
 	$bar->configure( -to => $res->header('Content-Length') );
 #	$bar->configure(-to => $res->{_headers}->content_length);

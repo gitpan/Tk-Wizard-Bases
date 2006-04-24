@@ -33,7 +33,7 @@ WriteMakefile(
 	'ABSTRACT' => 'Create wizards with Perl-Tk',
 	'DISTNAME' => 'Tk-Wizard-Bases',
 	'NAME' => 'Tk::Wizard',
-	'VERSION'	=> 1.941,
+	'VERSION'	=> 1.942,
 	'PREREQ_PM' => $prereq,
 	(
 		$] >= 5.005 ?    ## Add these new keywords supported since 5.005

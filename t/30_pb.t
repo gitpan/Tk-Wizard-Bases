@@ -36,12 +36,14 @@ ok(1);
 exit;
 
 sub page_splash { my $wizard = shift;
-	my $frame = $wizard->blank_frame(-title=>"Welcome to the Wizard Test 'pb'",
-	-text=>
+	my $frame = $wizard->blank_frame(
+		-wait  => 1,
+		-title => "Welcome to the Wizard Test 'pb'",
+		-text =>
 		"This script tests and hopefully demonstrates the 'postNextButtonAction' feature.\n\n"
 		."When you click Next, a Tk::ProgressBar widget should slowly be udpated."
+		."\n\nHowever in the test, the -wait flag means you don't have to..."
 	);
-	$frame->after(100,sub{$wizard->forward});
 	return $frame;
 }
 
@@ -55,18 +57,22 @@ sub page_finish { my $wizard = shift;
 
 sub pb { my $wizard = shift;
 	my $frame = $wizard->blank_frame(
-		-title=>"postNextButtonAction Test",
-		-subtitle=>"Updating a progress bar in real-time",
-		-text=>"The bar should fill, thanks to calling the 'update' method upon the Wizard, "
+		### -wait	=> 1 ### Using this with a progress bar really messes things up!,
+		-title => "postNextButtonAction Test",
+		-subtitle => "Updating a progress bar in real-time",
+		-text => "The bar should fill, thanks to calling the 'update' method upon the Wizard, "
 		."and the Next button should only become available when the job is done."
 	);
-         # $frame->configure(-bg => 'magenta'); # for debugging
+	# $frame->configure(-bg => 'magenta'); # for debugging
 	$bar = $frame->ProgressBar(
-                                   -colors=>[0=>'yellow'],
-                                   -borderwidth => 2, -relief => 'sunken',
-                                   -from => 0,	-to => 10,
-                                   -height => 15,
+		-colors=>[0=>'yellow'],
+		-borderwidth => 2, -relief => 'sunken',
+		-from => 0,	-to => 3,
+		-height => 15,
 	)->pack( -padx => 10, -pady => 10, -side => 'top', -fill => 'x', -expand => 1 );
+	$wizard->{backButton}->configure(state=>'disable');
+	$wizard->{nextButton}->configure(state=>'disable');
+	$wizard->update;
 	return $frame;
 }
 
@@ -77,7 +83,6 @@ sub preNextButtonAction { my $wizard = shift;
 sub postNextButtonAction { my $wizard = shift;
 	$_ = $wizard->currentPage;
 	if (/^$PB$/){
-		$wizard->{nextButton}->configure(-state=>"disable");
 		$wizard->update;
 		for my $i (0..$bar->cget(-to)){
 			sleep 1;

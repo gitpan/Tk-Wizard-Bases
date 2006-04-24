@@ -24,7 +24,7 @@ isa_ok($wizard, "Tk::Wizard");
 
 $wizard->addPage( sub{
 	$wizard->blank_frame(
-		-wait		=> 1000,
+		-wait		=> 100,
 		-title		=> "Title One",
 		-subtitle 	=>"It's just a test",
 		-text 		=> "This Wizard is a simple test of the Wizard, and nothing more.\n\nNo software will be installed, but you'll hopefully see a licence agreement page, and a directory listing page.",
@@ -32,7 +32,7 @@ $wizard->addPage( sub{
 );
 $wizard->addPage( sub{
 	$wizard->blank_frame(
-		-wait		=> 1000,
+		-wait		=> 100,
 		-title		=> "Title Two",
 		-subtitle 	=>"It's just a test",
 		-text 		=> "This Wizard is a simple test of the Wizard, and nothing more.\n\nNo software will be installed, but you'll hopefully see a licence agreement page, and a directory listing page.",
@@ -40,7 +40,7 @@ $wizard->addPage( sub{
 );
 $wizard->addPage( sub{
 	$wizard->blank_frame(
-		-wait		=> 1000,
+		-wait		=> 100,
 		-title		=> "Title Three",
 		-subtitle 	=>"It's just a test",
 		-text 		=> "This Wizard is a simple test of the Wizard, and nothing more.\n\nNo software will be installed, but you'll hopefully see a licence agreement page, and a directory listing page.",

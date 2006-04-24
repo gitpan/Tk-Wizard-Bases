@@ -1,6 +1,14 @@
 Tk::Wizard CHANGES LOG
 ----------------------
 
+Version 1.942 24 April 2006
+
+	* Wizard.pm: added &fix_wait to prevent weird Tk error messages
+	* Wizard.pm: call &fix_wait in blank_frame
+	* Installer.pm: &fix_wait 
+	* Installer.pm: remove progress bars when job is done and replace with -done_text
+	* Updated Installer.t to use Test::More
+
 VERSION 1.941 23 April 2006
 	
 	* Wizard.pm: Added Martin's patch to by default support Base64 photos in TaskList

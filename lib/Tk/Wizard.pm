@@ -6,7 +6,7 @@ Tk::Wizard - GUI for step-by-step interactive logical process
 
 =cut
 
-$Tk::Wizard::VERSION = do { my @r = (q$Revision: 1.941 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$Tk::Wizard::VERSION = do { my @r = (q$Revision: 1.942 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 use lib '../';
 use Carp;
@@ -410,7 +410,7 @@ Returns the index of the page added, which is useful as a page UID when
 peforming checks as the I<Next> button is pressed (see file F<test.pl>
 supplied with the distribution).
 
-See also L<METHOD blank_frame> and L<METHOD addDirSelectPage>.
+See also L<METHOD blank_frame>.
 
 =cut
 
@@ -592,7 +592,12 @@ sub parent { return shift }
 
 =head2 METHOD blank_frame
 
-	my $frame = wizard>->blank_frame(-title=>$title,-subtitle=>$sub,-text=>$standfirst, -wait=>$sometime);
+	my $frame = wizard>->blank_frame(
+		-title		=> $title,
+		-subtitle	=> $sub,
+		-text		=> $standfirst,
+		-wait		=> $sometime
+	);
 
 Returns a C<Tk::Frame> object that is a child of the Wizard control, with
 some C<pack>ing parameters applied - for more details, please see C<-style>
@@ -616,9 +621,12 @@ Main body text.
 
 =item -wait =>
 
+Experimental, maninly for test scripts.
 The amount of time in thousands of a second to wait before moving forwards
 regardless of the user. This actually just calls the C<forward> method (see
-L<METHOD forward>).
+L<METHOD forward>). Use of this feature will enable the back-button even if
+you have disabled it. What's more, if you page is supposed to wait for user
+input, this feature will probably not give your users a chance.
 
 See also: L<Tk::after>.
 
@@ -627,8 +635,6 @@ See also: L<Tk::after>.
 Also:
 
 	-width -height -background -font
-
-See also L<METHOD addDirSelectPage>.
 
 =cut
 
@@ -777,7 +783,14 @@ sub blank_frame { my ($self,$args) = (shift,{@_});
 #	$p->packPropagate(0);
 
 	if ($args->{-wait}){
-		$frame->after($args->{-wait},sub{$self->forward});
+		Tk::Wizard::fix_wait( \$args->{-wait} );
+	#	$frame->after($args->{-wait},sub{$self->forward});
+		$frame->after(
+			$args->{-wait},sub {
+				$self->{nextButton}->configure(-state=>'normal');
+				$self->{nextButton}->invoke;
+			}
+		);
 	}
 	$frame->packPropagate(0);
 	return $frame->pack(qw/-side top -anchor n -fill both -expand 1/);
@@ -1429,6 +1442,14 @@ sub prompt { my ($self,$args) = (shift,{@_});
 	return $input? $input : undef;
 }
 
+#
+# Using a -wait value for After of less than this seems to cause a weird Tk dump
+# so call this whenever using a -wait
+#
+sub fix_wait {
+	my $wait_ref = shift;
+	$$wait_ref += 200 if $$wait_ref < 250;
+}
 
 
 1;
@@ -1600,6 +1621,10 @@ This may change, please bear with me.
 
 =item *
 
+Task Frame LabFrame backgrond colour doesn't set properly under 5.6.1.
+
+=item *
+
 20 January 2003: the directory tree part does not create directories
 unless the eponymous button is clicked.
 
@@ -1616,8 +1641,7 @@ Still not much of a Tk widget inheritance - any pointers welcome.
 =item *
 
 Nothing is currently done to ensure text fits into the window - it is currently up to
-the client to make frames C<Scrolled>), as I'm having problems making C<&blank_frame>
-produce them.
+the client to make frames C<Scrolled>).
 
 =back
 

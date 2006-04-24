@@ -1,6 +1,6 @@
 
 use ExtUtils::testlib;
-use Test::More 'no_plan';
+use Test::More tests=>6;
 use warnings;
 use strict;
 use lib '../lib';
@@ -29,6 +29,7 @@ ok($wizard->addTaskListPage(
 
 $wizard->Show();
 MainLoop;
+ok(1,'Post MainLoop');
 exit;
 
 sub task_good {
