@@ -1,6 +1,15 @@
 Tk::Wizard CHANGES LOG
 ----------------------
 
+Version 1.943 17 May 2006
+
+	* Wizard.pM: Lee added fixed typo in test causing RT #19297
+	* Wizard.pM: Lee added destroy to finishButtonAction prototype
+	* Wizard.pm: Lee fiddled with CloseWindowEventCycle destroy giving unexpected errors (remove 'exit')
+	* Wizard.pm: Lee updated POD to reflect auto-destroy of previous version.
+	* Wizard.pm: Lee added -debug.
+	* Installer.pm: update to SYNOPSIS from clothohk
+	
 Version 1.942 24 April 2006
 
 	* Wizard.pm: added &fix_wait to prevent weird Tk error messages

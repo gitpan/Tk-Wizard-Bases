@@ -17,3 +17,4 @@ t/25_TaskList.t
 t/30_pb.t
 t/40_Win32.t
 t/50_Installer.t
+t/52_Installer.t

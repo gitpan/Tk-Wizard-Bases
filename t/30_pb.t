@@ -70,8 +70,8 @@ sub pb { my $wizard = shift;
 		-from => 0,	-to => 3,
 		-height => 15,
 	)->pack( -padx => 10, -pady => 10, -side => 'top', -fill => 'x', -expand => 1 );
-	$wizard->{backButton}->configure(state=>'disable');
-	$wizard->{nextButton}->configure(state=>'disable');
+	$wizard->{backButton}->configure(-state=>'disable');
+	$wizard->{nextButton}->configure(-state=>'disable');
 	$wizard->update;
 	return $frame;
 }

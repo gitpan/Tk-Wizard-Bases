@@ -1,12 +1,12 @@
 package Tk::Wizard;
+$Tk::Wizard::DEBUG = undef;
+$Tk::Wizard::VERSION = do { my @r = (q$Revision: 1.943 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 =head1 NAME
 
 Tk::Wizard - GUI for step-by-step interactive logical process
 
 =cut
-
-$Tk::Wizard::VERSION = do { my @r = (q$Revision: 1.942 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 use lib '../';
 use Carp;
@@ -109,16 +109,7 @@ hot on advertising widgets.
 
 NB: B<THIS IS STILL AN ALPHA RELEASE: ALL CONTRIBUTIONS ARE WELCOME!>
 
-Please also see L<IMPLEMENTATION NOTES>.
-
-=head1 CAVEATS
-
-If you do not call the C<Wizard>'s C<destroy> method, you will receive errors.
-This is usually best done as a callback to C<-finishButtonAction>:
-
-	$wizard->configure(
-		-finishButtonAction  => sub { $wizard->destroy;},
-	);
+Please read L<CAVEATS, BUGS, TODO>.
 
 =head1 STANDARD OPTIONS
 
@@ -253,10 +244,11 @@ sub Populate { my ($cw, $args) = @_;
 		-preHelpButtonAction    => ['PASSIVE',undef,undef,undef],
 		-helpButtonAction       => ['PASSIVE',undef,undef,undef],
 		-postHelpButtonAction   => ['PASSIVE',undef,undef,undef],
-		-preFinishButtonAction	=> ['PASSIVE',undef,undef, undef ],
-		-finishButtonAction     => ['PASSIVE',undef,undef, undef ],
-		-preCancelButtonAction 	=> ['CALLBACK',undef, undef, sub { &DIALOGUE_really_quit($cw) }],
-		-preCloseWindowAction	=> ['CALLBACK',undef, undef, sub { &DIALOGUE_really_quit($cw) }],
+		-preFinishButtonAction	=> ['PASSIVE',undef,undef,undef],
+		-finishButtonAction     => ['PASSIVE',undef,undef, sub { destroy($cw) } ],
+		-debug					=> ['PASSIVE',undef,undef,undef],
+		-finishButtonAction     => ['PASSIVE',undef,undef,undef],
+		-preCloseWindowAction	=> ['CALLBACK',undef,undef, sub { &DIALOGUE_really_quit($cw) }],
 		-tag_text				=> ['PASSIVE', "tag_text", "TagText", $sTagTextDefault],
 		-tag_width				=> ['PASSIVE', "tag_width", "TagWidth", $iTagWidthDefault],
 	);
@@ -274,6 +266,7 @@ sub Populate { my ($cw, $args) = @_;
 	$cw->{wizardPagePtr}	= 0;
 	$cw->{wizardFrame}		= 0;
 	$cw->{-style}			= $args->{-style} || 'top';
+	$cw->{-debug}			= $args->{-debug} || $Tk::Wizard::DEBUG|| undef;
 	$cw->{background_userchoice} = $args->{-background} || $cw->ConfigSpecs->{-background}[3];
 	$cw->{background} 		= $cw->{background_userchoice};
 
@@ -876,9 +869,10 @@ sub NextButtonEventCycle { my $self = shift;
 	if( $self->{nextButton}->cget("-text") eq $LABELS{FINISH}) {
 		if ( dispatch( $self->cget(-preFinishButtonAction))) { return; }
 		if ( dispatch( $self->cget(-finishButtonAction))) { return; }
+		$self->{really_quit}++;
 		$self->CloseWindowEventCycle();
 		# Can't do anything now, we're dead
-		$self->destroy;
+		# $self->destroy;
 	} else {
 		if ($self->{wizardPagePtr} == $#{ $self->{wizardPageList}}) {
 			$self->{cancelButton}->packForget() if $self->{cancelButton};
@@ -924,11 +918,43 @@ the calling object's C<destroy> method is called, by default closing the Wizard.
 =cut
 
 sub CloseWindowEventCycle { my ($self, $hGUI) = (shift,@_);
-	return if $self->Callback( -preCloseWindowAction => $self->{-preCloseWindowAction} );
+	$hGUI ||= $self;
+	warn "# Close window ec ... really=[$self->{really_quit}]\n" if $self->{-debug};
+	unless ($self->{really_quit}){
+		warn "# Really?\n" if $self->{-debug};
+		if ($self->Callback( -preCloseWindowAction => $self->{-preCloseWindowAction} )){
+			return;
+		}
+	}
 #	return if dispatch( $self->cget(-preCloseWindowAction));
-	# exit;
+	warn "# DESTROY!\n" if $self->{-debug};
 	$hGUI->destroy if defined $hGUI;
+	warn "Unexpected exit condition: no hGUI? (self=$self, hGUI=$hGUI";
+	# XXX BAD : TODO
 }
+
+
+=head1 DIALOGUE_really_quit
+
+Returns true if we are to continue.
+By default, may be called by closing the Wizard's window or pressing C<CANCEL>.
+
+=cut
+
+sub DIALOGUE_really_quit { my $self = shift;
+	return 0 if $self->{nextButton}->cget(-text) eq $LABELS{FINISH};
+	warn "# DIALOGUE_really_quit \n" if $self->{-debug};
+	unless ($self->{really_quit}){
+		warn "# Get really quit info\n" if $self->{-debug};
+		my $button = $self->parent->messageBox('-icon' => 'question', -type => 'yesno',
+		-default => 'no', -title => 'Quit Wizard??',
+		-message => "The Wizard has not finished running.\n\nIf you quit now, the job will not be complete.\n\nDo you really wish to quit?");
+		$self->{really_quit} = lc $button eq 'yes'? 1:0;
+		warn "# ... really=[$self->{really_quit}]\n" if $self->{-debug};
+	}
+	return !$self->{really_quit};
+}
+
 
 
 
@@ -1359,25 +1385,6 @@ sub page_multiple_choice { my ($self,$args) = (shift,shift);
 }
 
 
-=head1 DIALOGUE_really_quit
-
-Returns true if we are to continue.
-By default, may be called by closing the Wizard's window or pressing C<CANCEL>.
-
-=cut
-
-sub DIALOGUE_really_quit { my $self = shift;
-	return 0 if $self->{nextButton}->cget(-text) eq $LABELS{FINISH};
-	unless ($self->{really_quit}){
-		my $button = $self->parent->messageBox('-icon' => 'question', -type => 'yesno',
-		-default => 'no', -title => 'Quit Wizard??',
-		-message => "The Wizard has not finished running.\n\nIf you quit now, the job will not be complete.\n\nDo you really wish to quit?");
-		$self->{really_quit} = lc $button eq 'yes'? 1:0;
-	}
-	return !$self->{really_quit};
-}
-
-
 =head1 DIALOGUE METHOD prompt
 
 Equivalent to the JavaScript method of the same name: pops up
@@ -1615,7 +1622,19 @@ there are three routines you will need to over-ride:
 
 This may change, please bear with me.
 
-=head1 CAVEATS / BUGS / TODO
+=head1 CAVEATS, BUGS, TODO
+
+=head1 POTENTIAL CAVEATS
+
+In earlier versions of this still-alpha software, if you did not call the C<Wizard>'s C<destroy>
+method, you would receive errors. This may or may not still be an issue for you. If it is, you can
+"simply" proivde a callback to C<-finishButtonAction>:
+
+	$wizard->configure(
+		-finishButtonAction  => sub { $wizard->destroy;},
+	);
+
+Please let me know if you need to do this.
 
 =over 4
 
