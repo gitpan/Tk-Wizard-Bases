@@ -1,16 +1,15 @@
 ChangeLog
-MANIFEST			This list of files
-META.yml
-Makefile.PL
-README
-TODO
 lib/Tk/Wizard.pm
 lib/Tk/Wizard/Image.pm
 lib/Tk/Wizard/Installer.pm
 lib/Tk/Wizard/Installer/Win32.pm
+Makefile.PL
+MANIFEST			This list of files
+META.yml
 perl_licence_blab.txt
-t/06_AutoDestroy.t
+README
 t/05_Wizard.t
+t/06_AutoDestroy.t
 t/10_Wizard.t
 t/20_bad_arg.t
 t/25_TaskList.t
@@ -18,3 +17,8 @@ t/30_pb.t
 t/40_Win32.t
 t/50_Installer.t
 t/52_Installer.t
+t/70_TopLevel.t
+t/99_prepost.t
+t/cpan_index2.html
+t/lee.html
+TODO

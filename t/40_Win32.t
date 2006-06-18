@@ -1,20 +1,21 @@
 #! perl -w
-our $VERSION = 0.4;	# 17:40 06 May 2005
+our $VERSION = 0.5;	# 03 June 2006
 
 use strict;
 use Cwd;
 
 BEGIN {
-	if ($^O !~ /win/i){
-		# "Thurn, Martin" <mthurn@northropgrumman.com>
-		print "1..0 Skipped: MSWin32 module on $^O\n";
-		exit;
+	use lib '../lib';
+	use Test::More;
+	if( $^O !~ /win/i ) {
+		plan skip_all => "MSWin32 module on $^O";
+	}
+	else {
+		plan tests => 1;
 	}
 }
 
-print "1..1\n";
+use_ok("Tk::Wizard::Installer::Win32");
 
-use Tk::Wizard::Installer::Win32;
-print "ok 1 # Sorry, no real tests yet.\n";
 
 1;

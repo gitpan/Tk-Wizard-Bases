@@ -33,6 +33,8 @@ Tk::Wizard::Installer - building-blocks for a software install wizard
 
 use strict;
 use Carp;
+use warnings;
+no warnings 'redefine';
 use Cwd;
 use File::Path;
 use File::Copy;

@@ -1,0 +1,273 @@
+<html>
+<head>
+<title>Lee Goddard - just another boring personal homepage, by Lee Goddard</title>
+<meta HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<meta name="description" CONTENT="Just another boring personal homepage: Lee Goddard's homepage, where nothing much really happens. You know, you have a domain for e-mail and they give you webspace too...?">
+<meta name="keywords" CONTENT="Lee Goddard, leegoddard.net, leegoddard.com, leegoddard, Lee, Goddard, Godard, personal, homepage, home, london, brighton, devon, exeter, cornwall, sussex, launceston, highgate, bbc, procheckup, vhn, perl, cpan, xml">
+
+<link type="text/css" href="/css/frontpage.css" rel="stylesheet">
+
+
+<style type='text/css'>
+#left #links {
+	border-top: 0.5em solid #A3E80A;
+	border-bottom: 0.5em solid #A3E80A;
+	font-family:"Trebuchet MS";
+}
+#left #links a {
+	font-size: 80%;
+	width: 100%;
+	background-color: #B8ED43;
+	border:1px solid #A3E80A;
+	padding:2px;
+}
+
+.intro_legend p {
+	margin-left: 0;
+	margin-right:0;
+}
+
+#pie_container {
+	position:relative;
+	z-index:1;
+	height:285px;
+}
+.pie {
+	margin:0 auto;
+	text-align:center;
+	z-index:1;
+	/** width: 283.5px; height: 283.5px; **/
+	border:0;
+	top: -10px;
+}
+
+#left {
+	width: 300px;
+	margin:0 auto;
+	margin-right: 1em;
+	padding: 1em 0 1em 0;
+}
+
+#centre {
+	margin:0;
+	background-color: #B8ED43;
+	border:1px solid #A3E80A;
+	width: 450px;
+	float: both;
+	clear:none;
+	padding: 1em;
+}
+
+
+
+
+</style>
+
+<script language="JavaScript">
+
+
+if(screen && screen.height && screen.height<1024){
+//
+}
+
+function MM_reloadPage(init) {  //reloads the window if Nav4 resized
+  if (init==true) with (navigator) {if ((appName=="Netscape")&&(parseInt(appVersion)==4)) {
+    document.MM_pgW=innerWidth; document.MM_pgH=innerHeight; onresize=MM_reloadPage; }}
+  else if (innerWidth!=document.MM_pgW || innerHeight!=document.MM_pgH) location.reload();
+}
+MM_reloadPage(true);
+
+function MM_preloadImages() { //v3.0
+  var d=document; if(d.images){ if(!d.MM_p) d.MM_p=new Array();
+    var i,j=d.MM_p.length,a=MM_preloadImages.arguments; for(i=0; i<a.length; i++)
+    if (a[i].indexOf("#")!=0){ d.MM_p[j]=new Image; d.MM_p[j++].src=a[i];}}
+}
+
+function MM_findObj(n, d) { //v4.0
+  var p,i,x;  if(!d) d=document; if((p=n.indexOf("?"))>0&&parent.frames.length) {
+    d=parent.frames[n.substring(p+1)].document; n=n.substring(0,p);}
+  if(!(x=d[n])&&d.all) x=d.all[n]; for (i=0;!x&&i<d.forms.length;i++) x=d.forms[i][n];
+  for(i=0;!x&&d.layers&&i<d.layers.length;i++) x=MM_findObj(n,d.layers[i].document);
+  if(!x && document.getElementById) x=document.getElementById(n); return x;
+}
+
+function over(id){
+	// MM_findObj('intro_text').style.display = 'none';
+	var old = current_slice;
+	current_slice = id;
+	if (old) out(old);
+	for (var i = 0; i<pie_layers.length; i++) {
+		if (pie_layers[i] == current_slice) {
+			MM_findObj(pie_layers[i]).style.display = 'block';
+			MM_findObj(pie_layers[i]+'_text').style.display = 'block';
+		} else {
+			MM_findObj(pie_layers[i]).style.display = pie_layers[i]==id? 'block' : 'none';
+			MM_findObj(pie_layers[i]+'_text').style.display = (pie_layers[i]==id)? 'block' : 'none';
+		}
+	}
+}
+
+function out(id){
+	if (id == current_slice) return;
+	MM_findObj(id).style.display = 'none';
+}
+
+function click(id){
+//	alert( pie_layers[id].uri );
+//	document.location.href = pie_layers[id].uri;
+	return true;
+
+	var old = current_slice;
+	current_slice = id;
+	if (old) out(old);
+	MM_findObj('intro_text').style.display = 'none';
+	for (var i = 0; i<pie_layers.length; i++) {
+		MM_findObj(pie_layers[i]+'_text').style.display = (pie_layers[i]==id)? 'block' : 'none';
+	}
+	MM_findObj(id+'_text').blur(); // hide href boundary
+}
+
+var current_slice;
+var pie_layers = new Array();
+pie_layers.push( 'red' );
+pie_layers.push( 'violet' );
+pie_layers.push( 'green' );
+pie_layers.push( 'blue' );
+pie_layers.push( 'yellow' );
+
+</script>
+
+<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+</script>
+<script type="text/javascript">
+_uacct = "UA-297556-1";
+urchinTracker();
+</script>
+
+</head>
+
+
+<body class='frontpage'>
+<h1 style='display:none'>Lee Goddard Homepage</h1>
+<div id='all'>
+	<div id='centring'>
+		<h1 id='masthead'><i>lee</i><b>goddard.net</b> just another boring personal homepage</h1>
+		<div id='content'>
+
+			<div id='left'>
+				<div id="pie_container">
+					<img id='pie_dark_bg' src="pie/pie_full.png" class="pie">
+					<!-- begin overlays -->
+					<img id="red" style="display:none;"; class='pie' src="pie/red_on.png" />
+					<img id="violet" style="display:none;"; class='pie' src="pie/violet_on.png" />
+					<img id="blue" style="display:none;"; class='pie' src="pie/blue_on.png" />
+					<img id="green" style="display:none;"; class='pie' src="pie/green_on.png" />
+					<img id="yellow" style="display:none;"; class='pie' src="pie/yellow_on.png" />
+					<!-- end overlays  -->
+					<img id="pie_mapper" class="pie" src="pie/blank.png" usemap="#Map" border="0" width="567" height="567" style="top: 0"/>
+				</div>
+				<div id='links'>
+					<a href='/rss'>RSS Feed Collection</a>
+					<a href='http://del.icio.us/leegee'>Links</a>
+				</div>
+			</div><!-- left -->
+
+			<div id='centre'>
+
+				<!-- iv id='scroller' style='width:100%;height:100%;position:relative;overflow:auto;' -->
+					<div id='intro_text' class='intro_legend'>
+					<p><strong><b class='dropcap'>B</b>orn in Hillingdon in the United Kingdom, 1971,
+					Currently working as a freelance software analyst/developer &mdash; now back in London, after
+					nine months in Cologne. Before that I worked for a couple of years in London,
+					and spent a couple in <a href="/img/budapest/index.html">Budapest</a>,
+					 where I <a href="/wedding/index.html">married</a> <a href='http://www.paulacska.com/photographs'>Paula</a>,
+					 who took all the images on this site: she holds the copyright and reserves all rights on the images.
+					</p>
+					<p>Mouse-over the pie for stuff</p>
+					</div>
+
+					<h2 class='violet'><a href='#'
+					onMouseOver="over('violet')" onMouseOut='out("violet")'
+					>Curriculum Vitae</a></h2>
+					<div id='violet_text' class='legend' style='display:none;'>
+					<p>
+					I hold a 2:1 Bachelor of Arts Honours degree in English, and
+					a Master of Science degree in <a href='http://www.cogs.susx.ac.uk'>Intelligent
+					Systems</a>, both from the <a href='http://www.sussex.ac.uk'>University
+					of Sussex</a> in Brighton, UK.</p>
+					<p>
+					Please choose a slice of violet pie for a reasonably recent r&eacute;sum&eacute; in various formats.
+					</p>
+					</div>
+
+					<h2 class='red'><a href='#'
+					onMouseOver="over('red')" onMouseOut='out("red")'
+					>Code</a></h2>
+					<div id='red_text' class='legend' style='display:none;'>
+					<p>
+					My preferred language and lingua-franca is <em>Perl</em>, though I have
+					also written in Java, C, PROLOG, Pop-11, BASIC and a few others. I find
+					'computer languages' quite easy to pick up.
+					Some of my Perl is free on <a href="http://search.cpan.org/search?mode=author&amp;query=lgoddard">CPAN</a>,
+					the Comprehensive Perl Archive Network;
+					other stuff might be foudn by clicking the pie.
+					</p>
+					</div>
+
+					<h2 class='blue'><a href='#'
+					onMouseOver="over('blue')" onMouseOut='out("blue")'
+					>Old Writings</a></h2>
+					<div id='blue_text' class='legend' style='display:none;'>
+					<p>
+					After two degrees, it seemed a shame to check all those essays.
+					The wonders of the internet allow them to lay around here, awaiting
+					the laughter of my children. Sadder still are the number of people
+					who have looked at them: still, maybe one of them will offer me a
+					research doctorate with decent funding...
+					</div>
+
+					<h2 class='green'><a href='#'
+					onMouseOver="over('green')" onMouseOut='out("green")'
+					>Contact Details</a></h2>
+					<div id='green_text' class='legend' style='display:none;'>
+					<p>
+					It's amazing the number of people who use badly-written agents
+					to rip e-mail addresses from websites. So, please use the power
+					of the amazing human brain to decode the ciphers.
+					</div>
+
+					<h2 class='yellow'><a href='#'
+					onMouseOver="over('yellow')" onMouseOut='out("yellow")'
+					>Notes to Self</a></h2>
+					<div id='yellow_text' class='legend' style='display:none;'>
+					<p>Nothing to say that I want the world to hear, here.</p>
+					</div>
+
+				</div><!-- centre -->
+
+				<div id='right'>
+					<script type="text/javascript" src="http://www.flickr.com/badge_code_v2.gne?count=4&display=latest&size=t&layout=x&source=user&user=97146554%40N00"></script>
+				</div>
+
+		</div><!-- content -->
+
+		<div id='footer'>
+			Copyright &copy; 1996-2005, <i>ff.</i> Lee Goddard. All Rights Reserved. Help yourself to the source-code.
+		</div>
+
+	</div><!-- centring -->
+
+
+</div><!-- all -->
+
+
+<map name="Map">
+  <area shape="poly" coords="92,141,24,214,34,228,46,241,60,253,72,261,90,269" href="#" onClick="document.location.href='/blog'" alt="Blog" title="Blog" onMouseOver="over('yellow')" onMouseOut='out("yellow")'/>
+  <area shape="poly" coords="139,141,23,213,13,192,6,165,3,148,4,131" href="#" onClick="document.location.href='/contact'" alt="Contact Details" title="Contact Details" onMouseOver="over('green')" onMouseOut='out("green")'/>
+  <area shape="poly" coords="92,139,67,23,44,43,26,64,14,86,8,104,3,130" href="#" onClick="document.location.href='/essays'" alt="Old Writing" title="Old Writing" onMouseOver="over('blue')"  onMouseOut='out("blue")'/>
+  <area shape="poly" coords="227,35,143,138,69,23,97,10,122,4,154,4,178,8,204,18,218,27" href="#" onClick="document.location.href='/cv'" alt="CV" title="CV" onMouseOver="over('violet')"   onMouseOut='out("violet")'/>
+  <area shape="poly" coords="143,141,92,269,122,278,157,278,190,271,217,256,241,236,257,216,274,180,279,143,276,111,266,83,247,53,231,36" href="#" onClick="document.location.href='/code'" alt="Code" title="Red" onMouseOver="over('red')" onMouseOut='out("red")'/>
+</map>
+
+</body>
+</html>

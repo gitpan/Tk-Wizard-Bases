@@ -2,7 +2,7 @@
 use vars qw/$VERSION/;
 $VERSION = 1;	# 17 May 2006
 
-use Test::More tests=>19;
+use Test::More tests=>18;
 
 no warnings;
 use strict;
@@ -35,15 +35,15 @@ my $wizard = Tk::Wizard::Installer->new(
 	-title	=> "Installer Test",
 );
 isa_ok($wizard,'Tk::Wizard::Installer');
-isa_ok($wizard->parent, "Tk::Wizard::Installer","Parent");
+isa_ok($wizard->parent, "Tk::MainWindow","Parent");
 
 ok( $wizard->configure(
 	-preNextButtonAction => sub { &preNextButtonAction($wizard) },
 	-finishButtonAction  => sub { ok(1,'Finsihed') },
 ), 'Configure');
 
-isa_ok($wizard->cget(-preNextButtonAction),"CODE");
-isa_ok($wizard->cget(-finishButtonAction),"CODE");
+isa_ok($wizard->cget(-preNextButtonAction),"Tk::Callback");
+isa_ok($wizard->cget(-finishButtonAction),"Tk::Callback");
 
 
 # Create pages

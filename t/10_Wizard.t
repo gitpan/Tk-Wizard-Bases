@@ -25,7 +25,7 @@ our $WAIT = 1;
 # Instantiate Wizard
 #
 my $looped = 0;
-foreach my $style ('top', '') {
+foreach my $style ('top', '95') {
 	my $wizard = new Tk::Wizard(
 		-title 		=> "Test v$VERSION For Wizard $Tk::Wizard::VERSION",
 		-style		=> $style,
@@ -35,7 +35,7 @@ foreach my $style ('top', '') {
 		-preNextButtonAction => sub { &preNextButtonAction($wizard) },
 		-finishButtonAction  => sub { ok(1, 'user clicked finish') },
 	);
-	isa_ok($wizard->cget(-preNextButtonAction), "CODE");
+	isa_ok($wizard->cget(-preNextButtonAction), "Tk::Callback");
 
 	#
 	# Create pages
@@ -86,13 +86,12 @@ foreach my $style ('top', '') {
 		}
 	);
 	ok($p);
-	isa_ok($wizard->parent, "Tk::Wizard");
+	isa_ok($wizard->parent, "Tk::MainWindow");
 	$wizard->Show;
 
 	MainLoop();
 	ok(1);
 	undef $wizard;
-	last;
 }
 
 exit;

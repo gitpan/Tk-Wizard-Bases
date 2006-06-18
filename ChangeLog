@@ -1,11 +1,24 @@
 Tk::Wizard CHANGES LOG
 ----------------------
 
+Version 1.945 18 June 2006
+	
+	* Wizard.pm: fixed -resizable
+	* Wizard.pm: fixed -width and -height for individual pages
+	* Wizard.pm: Withraw the parent during our lifetime
+	* Wizard.pm: Assume we are passed a MainWindow like a normal widget; add one if it doesn't exist, to maintain backwards compatability and to be useful in my installer scripts
+
+Version 1.944 18 May 2006
+
+	* 50_Installer.t - Installer test checks if we're online by using LWP - no ExtUtils to do this...?
+	* Wizard.pM: Lee added finishButtonAction again	
+	* Wizard.pm: ET#19340 for clothohk, allowed the -height and -width to adjust the window size per frame
+	
 Version 1.943 17 May 2006
 
-	* Wizard.pM: Lee added fixed typo in test causing RT #19297
+	* Wizard.pM: Lee added fixed typo in test causing RT #19297 by clothohk
 	* Wizard.pM: Lee added destroy to finishButtonAction prototype
-	* Wizard.pm: Lee fiddled with CloseWindowEventCycle destroy giving unexpected errors (remove 'exit')
+	* Wizard.pm: Lee fiddled with CloseWindowEventCycle destroy 
 	* Wizard.pm: Lee updated POD to reflect auto-destroy of previous version.
 	* Wizard.pm: Lee added -debug.
 	* Installer.pm: update to SYNOPSIS from clothohk

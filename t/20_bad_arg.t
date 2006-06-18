@@ -3,6 +3,7 @@ our $VERSION = 0.1;	# 29 November 2002 14:41 CET
 
 use strict;
 use Cwd;
+use lib '../lib';
 
 print "1..4\n";
 

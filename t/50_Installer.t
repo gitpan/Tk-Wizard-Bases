@@ -1,14 +1,28 @@
 #! perl
 use vars qw/$VERSION/;
-$VERSION = 3;	# 24 April 2006
-
-use Test::More tests=>17;
+$VERSION = 3;	# 03 June 2006
 
 no warnings;
 use strict;
 
-use lib '../lib';
-use_ok("Tk::Wizard::Installer" =>  1.931);
+BEGIN {
+	use lib '../lib';
+	use Test::More;
+	use LWP::UserAgent;
+	my $ua = LWP::UserAgent->new;
+	$ua->timeout(10);
+	$ua->env_proxy;
+	my $response = $ua->get('http://search.cpan.org/');
+
+	if($response->is_error) {
+		plan skip_all => "LWP cannot get cpan, guess we're able to get online";
+	}
+	else {
+		plan tests => 16;
+	}
+
+	use_ok("Tk::Wizard::Installer" =>  1.931);
+}
 
 our $TEMP_DIR = $ENV{TEMP} || $ENV{TMP} || "C:/temp" ;
 mkdir("/temp",0777) if !-d $TEMP_DIR;
@@ -30,15 +44,15 @@ if (!-e '__perlwizardtest'){
 
 my $wizard = Tk::Wizard::Installer->new( -title => "Installer Test", );
 isa_ok($wizard,'Tk::Wizard::Installer');
-isa_ok($wizard->parent, "Tk::Wizard::Installer","Parent");
+isa_ok($wizard->parent, "Tk::MainWindow","Parent");
 
 ok( $wizard->configure(
 	-preNextButtonAction => sub { &preNextButtonAction($wizard) },
 	-finishButtonAction  => sub { ok(1,'Finsihed') },
 ), 'Configure');
 
-isa_ok($wizard->cget(-preNextButtonAction),"CODE");
-isa_ok($wizard->cget(-finishButtonAction),"CODE");
+isa_ok($wizard->cget(-preNextButtonAction),"Tk::Callback");
+isa_ok($wizard->cget(-finishButtonAction),"Tk::Callback");
 
 
 # Create pages

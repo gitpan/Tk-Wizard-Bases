@@ -24,7 +24,7 @@ $wizard->configure(
 	-preNextButtonAction => sub { &preNextButtonAction($wizard) },
 	-finishButtonAction  => sub { ok(1);  $wizard->destroy;},
 );
-isa_ok($wizard->cget(-preNextButtonAction), "CODE");
+isa_ok($wizard->cget(-preNextButtonAction), "Tk::Callback");
 
 is(1, $wizard->addPage( sub{ page_splash ($wizard)} ));
 $PB = $wizard->addPage( sub{ pb($wizard) });
@@ -57,13 +57,13 @@ sub page_finish { my $wizard = shift;
 
 sub pb { my $wizard = shift;
 	my $frame = $wizard->blank_frame(
-		### -wait	=> 1 ### Using this with a progress bar really messes things up!,
+		-wait	=> 1, ### Using this with a progress bar really messes things up!,
 		-title => "postNextButtonAction Test",
 		-subtitle => "Updating a progress bar in real-time",
 		-text => "The bar should fill, thanks to calling the 'update' method upon the Wizard, "
 		."and the Next button should only become available when the job is done."
 	);
-	# $frame->configure(-bg => 'magenta'); # for debugging
+	$frame->configure(-bg => 'magenta'); # for debugging
 	$bar = $frame->ProgressBar(
 		-colors=>[0=>'yellow'],
 		-borderwidth => 2, -relief => 'sunken',

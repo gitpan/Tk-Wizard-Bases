@@ -5,6 +5,9 @@ my $prereq = {
 	"Tk::ProgressBar"	=> 0.1,
 	"Tk::LabFrame" => 0.1,
 	"File::Path" => 0.1,
+	"File::Path"	=> 0,
+	"Tk::DirTree" => 0,
+	"Tk::ROText"  => 0,
 };
 
 if ($^O =~ m/win/i) {
@@ -26,14 +29,11 @@ if ($^O =~ m/win/i) {
 	}
 }
 
-
-warn "\nSome of these test fail with Tk dumps that baffle me.\nAny help appreciated.\n\n";
-
 WriteMakefile(
-	'ABSTRACT' => 'Create wizards with Perl-Tk',
+	'ABSTRACT' => 'GUI for step-by-step interactive logical process',
 	'DISTNAME' => 'Tk-Wizard-Bases',
 	'NAME' => 'Tk::Wizard',
-	'VERSION'	=> 1.943,
+	'VERSION'	=> 1.945,
 	'PREREQ_PM' => $prereq,
 	(
 		$] >= 5.005 ?    ## Add these new keywords supported since 5.005

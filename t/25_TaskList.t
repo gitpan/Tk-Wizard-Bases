@@ -12,7 +12,7 @@ BEGIN {
 
 my $wizard = new $class( -title => "Task List Test", );
 isa_ok($wizard, $class);
-isa_ok($wizard->parent, $class);
+isa_ok($wizard->parent, 'Tk::MainWindow');
 ok($wizard->addPage( sub{ &page_splash($wizard)} ));
 ok($wizard->addTaskListPage(
 	# -wait => 2,

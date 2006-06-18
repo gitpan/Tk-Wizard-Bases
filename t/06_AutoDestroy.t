@@ -15,20 +15,40 @@ BEGIN {
 
 my $WAIT = 1;
 
+{
+	my $wizard = new Tk::Wizard;
+	isa_ok($wizard, "Tk::Wizard");
+	is(1,$wizard->addPage( sub{ $wizard->blank_frame(-wait=>$WAIT) } ));
+	$wizard->Show;
+	MainLoop;
+	ok('Pretest');
+}
+
 ONE: {
+	my $wizard = new Tk::Wizard( -title => "Test", );
+	isa_ok($wizard, "Tk::Wizard");
+	is(1,$wizard->addPage( sub{ $wizard->blank_frame(-wait=>$WAIT) } ), 'pre page');
+	is(2, $wizard->addPage( sub{ page_splash ($wizard)} ), 'p1');
+	is(3, $wizard->addPage (sub{page_finish($wizard)} ),'p2');
+	$wizard->Show;
+	MainLoop;
+	isa_ok($wizard, "Tk::Wizard", "Wizard survived CloseWindowEventCycle");
+	ok(1, 'ONE');
+}
+
+TWO: {
 	my $wizard = new Tk::Wizard( -title => "Test", );
 	isa_ok($wizard, "Tk::Wizard");
 	$wizard->configure(
 		-preFinishButtonAction  => sub { ok(1) },
 		-finishButtonAction  => sub { ok(1);  $wizard->destroy;},
 	);
-	isa_ok($wizard->cget(-finishButtonAction), "CODE");
-
-	is(1, $wizard->addPage( sub{ page_splash ($wizard)} ));
-	is(2, $wizard->addPage (sub{page_finish($wizard)} ));
+	isa_ok($wizard->cget(-finishButtonAction), "Tk::Callback");
+	is(1, $wizard->addPage( sub{ page_splash ($wizard)} ), "page one");
+	is(2, $wizard->addPage (sub{page_finish($wizard)} ), "page two");
 	$wizard->Show;
 	MainLoop;
-	ok(1);
+	ok(1,'Done TWO');
 }
 
 THREE: {
@@ -47,35 +67,22 @@ THREE: {
 }
 
 
-THREE: {
-	my $wizard = new Tk::Wizard( -title => "Test", );
-	isa_ok($wizard, "Tk::Wizard");
-	is(1, $wizard->addPage( sub{ page_splash ($wizard)} ));
-	is(2, $wizard->addPage (sub{page_finish($wizard)} ));
-	$wizard->Show;
-	MainLoop;
-	isa_ok($wizard, "Tk::Wizard", "Wizard survived CloseWindowEventCycle");
-	ok(1);
-}
-
 
 exit;
 
 sub page_splash { my $wizard = shift;
-	my $frame = $wizard->blank_frame(-title=>"Welcome to the Wizard Test 'pb'",
-	-text=>
-		"This script tests and hopefully demonstrates the 'postNextButtonAction' feature.\n\n"
-		."When you click Next, a Tk::ProgressBar widget should slowly be udpated."
-	);
-	$frame->after($WAIT,sub{$wizard->forward});
+	my $frame = $wizard->blank_frame(-wait=>$WAIT);
+	# $frame->after($WAIT,sub{$wizard->forward});
 	return $frame;
 }
 
 sub page_finish { my $wizard = shift;
-	my ($frame,@pl) = $wizard->blank_frame(-title=>"Wizard Test 'pb' Complete",
+	my ($frame,@pl) = $wizard->blank_frame(
+		-wait=>$WAIT,
+		-title=>"Wizard Test 'pb' Complete",
 		-text=> "Thanks for running this test.",
 	);
-	$frame->after($WAIT,sub{$wizard->forward});
+	#$frame->after($WAIT,sub{$wizard->forward});
 	return $frame;
 }
 

@@ -17,6 +17,7 @@ use Cwd;
 my $root = cwd =~ /\/t$/? '..' : '.';
 
 my $wizard = new Tk::Wizard(
+	-debug		=> undef,
 	-title 		=> "Test",
 	-style		=> 'top',
 );
