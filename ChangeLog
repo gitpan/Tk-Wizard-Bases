@@ -1,6 +1,10 @@
 Tk::Wizard CHANGES LOG
 ----------------------
 
+Version 1.9451 19 June 2006
+
+	* Wizard.pm: CloseWindowEventCycle was calling self->destroy but should have called parent->self->destroy if the parent was defiend by itself
+
 Version 1.945 18 June 2006
 	
 	* Wizard.pm: fixed -resizable

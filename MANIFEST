@@ -19,6 +19,4 @@ t/50_Installer.t
 t/52_Installer.t
 t/70_TopLevel.t
 t/99_prepost.t
-t/cpan_index2.html
-t/lee.html
 TODO

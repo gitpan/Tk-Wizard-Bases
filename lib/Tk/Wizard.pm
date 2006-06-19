@@ -1,6 +1,6 @@
 package Tk::Wizard;
 $Tk::Wizard::DEBUG = undef;
-$Tk::Wizard::VERSION = do { my @r = (q$Revision: 1.945 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$Tk::Wizard::VERSION = do { my @r = (q$Revision: 1.9451 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
 =head1 NAME
 
@@ -1093,10 +1093,11 @@ sub CloseWindowEventCycle { my ($self, $hGUI) = (shift,@_);
 #	return if dispatch( $self->cget(-preCloseWindowAction));
 	warn "# DESTROY!\n" if $self->{-debug};
 	$hGUI->destroy if defined $hGUI;
-	$self->destroy;
 	if ($self->{Configure}{-kill_parent_on_destroy}){
 		warn "Kill parent ".$self->parent." ".$self->{Configure}{-parent} if $self->{-debug};
 		$self->parent->destroy;
+	} else {
+		$self->destroy; # Legacy
 	}
 	return undef;
 }
