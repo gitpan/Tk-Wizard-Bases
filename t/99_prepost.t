@@ -1,5 +1,5 @@
 use ExtUtils::testlib;
-use Test::More no_plan;
+use Test::More tests => 19;
 
 BEGIN {
 	use lib '../lib';
@@ -36,14 +36,14 @@ foreach my $style (qw[ top 95 ]){
 	);
 	$wizard->addPage( sub {
 		$wizard->blank_frame(
-			-title  => "page 2",
+			-title  => "page 3",
 			-wait	=> $Wait,
 			-width	=> 900,
 		);}
 	);
 	$wizard->addPage( sub {
 		$wizard->blank_frame(
-			-title  => "page 3",
+			-title  => "page last",
 			-wait	=> $Wait,
 		);}
 	);
@@ -56,6 +56,7 @@ sub preNextButtonAction { my $wizard = shift;
     $_ = $wizard->currentPage;
     push @out, "pre next button on page $_";
     print $out[$#out],"\n";
+    pass;
     return 1;
 }
 
@@ -63,6 +64,7 @@ sub postNextButtonAction { my $wizard = shift;
     $_ = $wizard->currentPage;
     push @out, "post next button on page $_";
     print $out[$#out],"\n";
+    pass;
     return 1;
 }
 
@@ -71,6 +73,7 @@ sub preFinishButtonAction { my $wizard = shift;
     $_ = $wizard->currentPage;
     push @out, "pre finish button on page $_";
     print $out[$#out],"\n";
+    pass;
     return 1;
 }
 
@@ -78,5 +81,6 @@ sub finishButtonAction { my $wizard = shift;
     $_ = $wizard->currentPage;
     push @out, "finish button on page $_";
     print $out[$#out],"\n";
+    pass;
     return 1;
 }

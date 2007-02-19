@@ -2,7 +2,7 @@
 use vars qw/$VERSION/;
 $VERSION = 1;	# 17 May 2006
 
-use Test::More tests=>18;
+use Test::More tests=>19;
 
 no warnings;
 use strict;
@@ -39,7 +39,7 @@ isa_ok($wizard->parent, "Tk::MainWindow","Parent");
 
 ok( $wizard->configure(
 	-preNextButtonAction => sub { &preNextButtonAction($wizard) },
-	-finishButtonAction  => sub { ok(1,'Finsihed') },
+	-finishButtonAction  => sub { ok(1,'Finished'); 1 },
 ), 'Configure');
 
 isa_ok($wizard->cget(-preNextButtonAction),"Tk::Callback");

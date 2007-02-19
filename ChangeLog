@@ -1,24 +1,30 @@
-Tk::Wizard CHANGES LOG
-----------------------
+Tk::Wizard CHANGE LOG
+---------------------
 
-Version 1.9451 19 June 2006
+Version 1.951, 19 Feb. 2007 (interim release by Martin Thurn)	
+	
+	* Wizard.pm: All "ButtonAction" callbacks now must really return non-false value in order for operation to continue, as the documentation has always said.  (Previous release seemed to be opposite?)
+	* Wizard.pm: new method addFileSelectPage()
+	* All tests pass (with some ignorable warnings) on MSWin32 with ActivePerl build 819; not tested on other platforms (yet).
+	
+Version 1.9451, 19 June 2006
 
-	* Wizard.pm: CloseWindowEventCycle was calling self->destroy but should have called parent->self->destroy if the parent was defiend by itself
+	* Wizard.pm: CloseWindowEventCycle was calling self->destroy but should have called parent->self->destroy if the parent was defined by itself
 
-Version 1.945 18 June 2006
+Version 1.945, 18 June 2006
 	
 	* Wizard.pm: fixed -resizable
 	* Wizard.pm: fixed -width and -height for individual pages
 	* Wizard.pm: Withraw the parent during our lifetime
 	* Wizard.pm: Assume we are passed a MainWindow like a normal widget; add one if it doesn't exist, to maintain backwards compatability and to be useful in my installer scripts
 
-Version 1.944 18 May 2006
+Version 1.944, 18 May 2006
 
 	* 50_Installer.t - Installer test checks if we're online by using LWP - no ExtUtils to do this...?
 	* Wizard.pM: Lee added finishButtonAction again	
 	* Wizard.pm: ET#19340 for clothohk, allowed the -height and -width to adjust the window size per frame
 	
-Version 1.943 17 May 2006
+Version 1.943, 17 May 2006
 
 	* Wizard.pM: Lee added fixed typo in test causing RT #19297 by clothohk
 	* Wizard.pM: Lee added destroy to finishButtonAction prototype
@@ -27,7 +33,7 @@ Version 1.943 17 May 2006
 	* Wizard.pm: Lee added -debug.
 	* Installer.pm: update to SYNOPSIS from clothohk
 	
-Version 1.942 24 April 2006
+Version 1.942, 24 April 2006
 
 	* Wizard.pm: added &fix_wait to prevent weird Tk error messages
 	* Wizard.pm: call &fix_wait in blank_frame
@@ -35,7 +41,7 @@ Version 1.942 24 April 2006
 	* Installer.pm: remove progress bars when job is done and replace with -done_text
 	* Updated Installer.t to use Test::More
 
-VERSION 1.941 23 April 2006
+VERSION 1.941, 23 April 2006
 	
 	* Wizard.pm: Added Martin's patch to by default support Base64 photos in TaskList
 	* Wizard.pm: Added to TaskList more photo states added state indicators
@@ -45,7 +51,7 @@ VERSION 1.941 23 April 2006
 	* Wizard.pm: bug fix in NextButtonEventCycle: CloseWindowEventCycle ends logic,
 	  rather than falling through to the remainder of the next button actions.
 	
-VERSION 1.94 22 April 2006
+VERSION 1.94, 22 April 2006
 
 	* Patch by Martin Thurn: sorry it's late:
 	* Wizard.pm: fix a typo "image_idr"
@@ -61,11 +67,11 @@ VERSION 1.92
 	* in Installer.pm, eliminate the big empty space on the licence_page
 	* in Wizard.pm, make all of the user portion (but none of the button/borders) expand when the window is resized
 
-VERSION 1.90 May 2005
+VERSION 1.90, May 2005
 	
 	Um... had my first child, can't remember what the patch was.
 	
-VERSION 1.08
+VERSION 1.08,
 
 	* Mainly release to get the test suite working again,
 	  and totally automated and devoid of net-access requirement
@@ -81,7 +87,7 @@ VERSION 1.08
 	* Added hashes to Installer warnings
 	* Passes all tests on Windoze. Will try Debian on Monday.
 
-VERSION 1.07 patched by Martin Thurn <mthurn@verizon.net>:
+VERSION 1.07, patched by Martin Thurn <mthurn@verizon.net>:
 
 	* lib/Tk/Wizard.pm (Show, render_current_page): BUGFIX for DirSelectPage leaving Cwd in an unknown place
 	* lib/Tk/Wizard.pm: Fixed [most!] typos in pod
@@ -112,14 +118,14 @@ VERSION 1.06
 
 	*	Bug fixed for default -style.
 
-VERSION 1.038 11 April 2003
+VERSION 1.038, 11 April 2003
 
 	*	Images install to perlsitearch dir and are
 		used by default; added more warnings.
 
 	*	Win32::Installer can now create shortcuts!
 
-VERSION 1.037 08 April 2003
+VERSION 1.037, 08 April 2003
 
 	*	Added addStartMenuPage to Tk::Wizard::Installer::Win32
 
@@ -127,25 +133,25 @@ VERSION 1.037 08 April 2003
 
 	*	Removed BACK and CANCEL buttons from Finish page.
 
-VERSION 1.036 04 April 2003
+VERSION 1.036, 04 April 2003
 
 	*	New page type, text_frame via addTextFrame.
 
 	*	New page type, multiple choice.
 
-VERSION 1.035 02 April 2003
+VERSION 1.035, 02 April 2003
 
 	*	-nohelpbutton bug now corrected
 
 	*	-continue now works for empty task lists
 		(previously it asked for a key to be pressed)
 
-VERSION 1.034 21 January 2003
+VERSION 1.034, 21 January 2003
 
 	*	Typed = instead of =~, resulting in
 		incomplete dir listings in DirTrees.
 
-VERSION 1.033 20 January 2003
+VERSION 1.033, 20 January 2003
 
 	*	Fixed lack of require of File::Path
 

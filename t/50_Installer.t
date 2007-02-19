@@ -18,7 +18,7 @@ BEGIN {
 		plan skip_all => "LWP cannot get cpan, guess we're able to get online";
 	}
 	else {
-		plan tests => 16;
+		plan tests => 17;
 	}
 
 	use_ok("Tk::Wizard::Installer" =>  1.931);
@@ -47,8 +47,8 @@ isa_ok($wizard,'Tk::Wizard::Installer');
 isa_ok($wizard->parent, "Tk::MainWindow","Parent");
 
 ok( $wizard->configure(
-	-preNextButtonAction => sub { &preNextButtonAction($wizard) },
-	-finishButtonAction  => sub { ok(1,'Finsihed') },
+	-preNextButtonAction => sub { &preNextButtonAction($wizard); },
+	-finishButtonAction  => sub { ok(1,'Finsihed'); },
 ), 'Configure');
 
 isa_ok($wizard->cget(-preNextButtonAction),"Tk::Callback");

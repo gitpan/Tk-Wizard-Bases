@@ -1,7 +1,7 @@
 #! perl -w
 
 use ExtUtils::testlib;
-use Test::More tests => 53;
+use Test::More no_plan;
 
 BEGIN {
 	use lib '../lib';

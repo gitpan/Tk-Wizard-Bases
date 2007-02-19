@@ -2,7 +2,7 @@
 
 my $VERSION = do { my @r = (q$Revision: 1.4 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 
-use lib '../lib';
+# use lib '../lib';
 use Cwd;
 use ExtUtils::testlib;
 use Test::More no_plan;
@@ -20,16 +20,16 @@ my $wizard = new Tk::Wizard(
 );
 isa_ok($wizard, "Tk::Wizard");
 $wizard->configure(
-	-postNextButtonAction => sub { &postNextButtonAction($wizard) },
-	-preNextButtonAction => sub { &preNextButtonAction($wizard) },
-	-finishButtonAction  => sub { ok(1);  $wizard->destroy;},
+	-postNextButtonAction => sub { &postNextButtonAction($wizard); },
+	-preNextButtonAction => sub { &preNextButtonAction($wizard); },
+	-finishButtonAction  => sub { ok(1);  $wizard->destroy; 1; },
 );
 isa_ok($wizard->cget(-preNextButtonAction), "Tk::Callback");
 
 is(1, $wizard->addPage( sub{ page_splash ($wizard)} ));
 $PB = $wizard->addPage( sub{ pb($wizard) });
 is(2, $PB);
-is(3, $wizard->addPage (sub{page_finish($wizard)} ));
+is(3, $wizard->addPage(sub{ page_finish($wizard)} ));
 $wizard->Show;
 MainLoop;
 ok(1);
@@ -56,8 +56,8 @@ sub page_finish { my $wizard = shift;
 }
 
 sub pb { my $wizard = shift;
-	my $frame = $wizard->blank_frame(
-		-wait	=> 1, ### Using this with a progress bar really messes things up!,
+         my $frame = $wizard->blank_frame(
+                                          # -wait	=> 1, ### Using this with a progress bar really messes things up!,
 		-title => "postNextButtonAction Test",
 		-subtitle => "Updating a progress bar in real-time",
 		-text => "The bar should fill, thanks to calling the 'update' method upon the Wizard, "
@@ -77,23 +77,36 @@ sub pb { my $wizard = shift;
 }
 
 sub preNextButtonAction { my $wizard = shift;
-
+# # diag('this is preNextButtonAction');
+1;
 }
 
-sub postNextButtonAction { my $wizard = shift;
-	$_ = $wizard->currentPage;
-	if (/^$PB$/){
-		$wizard->update;
-		for my $i (0..$bar->cget(-to)){
-			sleep 1;
-			$bar->value($i);
-			$bar->update;
-		}
-		$wizard->{nextButton}->configure(-state=>"normal");
-		$wizard->{nextButton}->after(100,sub{$wizard->forward});
-	}
-	return 1;
-}
+sub postNextButtonAction
+  {
+  my $wizard = shift;
+  my $iPage = $wizard->currentPage;
+  # diag(qq'this is postNextButtonAction on page $iPage');
+  if ($iPage+1 == $PB)
+    {
+    # diag('step 0');
+    $wizard->update;
+    # diag('step 1');
+    foreach my $i (0..$bar->cget(-to))
+      {
+      sleep 1;
+      $bar->value($i);
+      # diag('step 2.1');
+      $bar->update;
+      } # foreach
+    # diag('step 3');
+    $wizard->{nextButton}->configure(-state=>"normal");
+    # diag('step 4');
+    $wizard->{nextButton}->after(100,sub{$wizard->forward});
+    # diag('step 5');
+    }
+  # diag('step 6');
+  return 1;
+  } # postNextButtonAction
 
 
 __END__

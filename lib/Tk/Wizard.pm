@@ -1,6 +1,8 @@
 package Tk::Wizard;
 $Tk::Wizard::DEBUG = undef;
-$Tk::Wizard::VERSION = do { my @r = (q$Revision: 1.9451 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+my
+# $VERSION = do { my @r = (q$Revision: 1.951 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+$VERSION = '1.951'; # Martin Thurn's interim release
 
 =head1 NAME
 
@@ -342,20 +344,20 @@ sub Populate { my ($self, $args) = @_;
 		-imagepath		=> ['PASSIVE','imagepath', 'Imagepath', \$Tk::Wizard::Image::LEFT{WizModernImage}],
 		-topimagepath	=> ['PASSIVE','topimagepath', 'Topimagepath', \$Tk::Wizard::Image::TOP{WizModernSmallImage}],
 		# event handling references
-		-nohelpbutton			=> ['CALLBACK',undef,undef, sub {} ],
-		-preNextButtonAction    => ['CALLBACK',undef,undef, sub {} ],
-		-postNextButtonAction   => ['CALLBACK',undef,undef, sub {} ],
-		-preBackButtonAction    => ['CALLBACK',undef,undef, sub {} ],
-		-postBackButtonAction   => ['CALLBACK',undef,undef, sub {} ],
-		-preHelpButtonAction    => ['CALLBACK',undef,undef, sub {} ],
-		-helpButtonAction       => ['CALLBACK',undef,undef, sub {} ],
-		-postHelpButtonAction   => ['CALLBACK',undef,undef, sub {} ],
-		-preFinishButtonAction	=> ['CALLBACK',undef,undef, sub {} ],
-		-finishButtonAction     => ['CALLBACK',undef,undef, sub { destroy($self) } ],
+		-nohelpbutton			=> ['CALLBACK',undef,undef, sub {1} ],
+		-preNextButtonAction    => ['CALLBACK',undef,undef, sub {1} ],
+		-postNextButtonAction   => ['CALLBACK',undef,undef, sub {1} ],
+		-preBackButtonAction    => ['CALLBACK',undef,undef, sub {1} ],
+		-postBackButtonAction   => ['CALLBACK',undef,undef, sub {1} ],
+		-preHelpButtonAction    => ['CALLBACK',undef,undef, sub {1} ],
+		-helpButtonAction       => ['CALLBACK',undef,undef, sub {1} ],
+		-postHelpButtonAction   => ['CALLBACK',undef,undef, sub {1} ],
+		-preFinishButtonAction	=> ['CALLBACK',undef,undef, sub {1} ],
+		-finishButtonAction     => ['CALLBACK',undef,undef, sub { $self->destroy; 1 } ],
 		-kill_parent_on_destroy	=> ['PASSIVE', undef, undef, undef ],
-		-debug					=> ['PASSIVE',undef,undef,undef],
-		-finishButtonAction     => ['CALLBACK',undef,undef, sub {} ],
-		-preCloseWindowAction	=> ['CALLBACK',undef,undef, sub { &DIALOGUE_really_quit($self) }],
+		-debug                  => ['PASSIVE',undef,undef,undef],
+                # -finishButtonAction     => ['CALLBACK',undef,undef, sub {1} ],
+		-preCloseWindowAction	=> ['CALLBACK',undef,undef, sub { &DIALOGUE_really_quit($self); }],
 		-tag_text				=> ['PASSIVE', "tag_text", "TagText", $sTagTextDefault],
 		-tag_width				=> ['PASSIVE', "tag_width", "TagWidth", $iTagWidthDefault],
 		-width  				=> ['SELF', 'width', 'Width', $DEFAULT_WIDTH ],
@@ -1009,25 +1011,43 @@ sub text_frame { my ($self,$args) = (shift,{@_});
 # Method:       dispatch
 # Description:  Thin wrapper to dispatch event cycles as needed
 # Parameters:    The dispatch function is an internal function used to determine if the dispatch back reference
-#         is undefined or if it should be dispatched. Undefined methods are used to denote dispatchback
-#         methods to bypass. This reduces the number of method dispatchs made for each handler and also
+#         is undefined or if it should be dispatched.  Undefined methods are used to denote dispatchback
+#         methods to bypass.  This reduces the number of method dispatchs made for each handler and also
 #         increased the usability of the set methods when trying to unregister event handlers.
 #
-sub dispatch { my $handler = shift;
-	return (!($handler->())) if defined $handler and ref $handler and ref $handler eq 'CODE';
-	return 0;
-}
+sub dispatch
+  {
+  my $handler = shift;
+  # print STDERR " DDD dispatch($handler)\n";
+  if (ref($handler) eq 'Tk::Callback')
+    {
+    return ! $handler->Call();
+    } # if
+  if (ref($handler) eq 'CODE')
+    {
+    return ! $handler->();
+    } # if
+  return 1;
+  return (!($handler->())) if ((defined $handler)
+                               && (ref $handler)
+                               && (ref $handler eq 'Tk::Callback'));
+  return $handler->Call(@_) if ((defined $handler)
+                                && (ref $handler));
+  # Below is the original 1.9451 version:
+  return (!($handler->Call())) if defined $handler and ref $handler and ref $handler eq 'CODE';
+  return 0;
+  } # dispatch
 
 #
 # Method:      NextButtonEventCycle
 # Description: Runs the complete view of the action handler cycle for the "Next>" button on the
 #              wizard button bar. This includes dispatching the preNextButtonAction and
-#              postNextButtonAction handler at the apporprate times.
+#              postNextButtonAction handler at the appropriate times.
 #
 sub NextButtonEventCycle { my $self = shift;
 	if (dispatch( $self->cget(-preNextButtonAction) )) { return;}
-	# advance the wizard page pointer and then adjust the navigation buttons.
-	# readraw the frame when finished to get changes to take effect.
+	# Advance the wizard page pointer and then adjust the navigation buttons.
+	# Redraw the frame when finished to get changes to take effect.
 	$self->{wizardPagePtr}++;
 	$self->{wizardPagePtr} = $#{$self->{wizardPageList}} if( $self->{wizardPagePtr} >= $#{ $self->{wizardPageList}});
 	$self->{backButton}->configure( -state => "normal");
@@ -1045,6 +1065,7 @@ sub NextButtonEventCycle { my $self = shift;
 			$self->{nextButton}->configure( -text => $LABELS{FINISH}) if $self->{nextButton};
 		}
 		$self->render_current_page;
+                # print STDERR " DDD this is before dispatch postNextButtonAction\n";
 		if (dispatch( $self->cget(-postNextButtonAction))) { return; }
 	}
 }
@@ -1314,6 +1335,92 @@ sub callback_dirSelect { my ($self,$var) = (shift,shift);
 	}
 	return 0;
 }
+
+
+=head1 METHOD addFileSelectPage
+
+  $wizard->addFileSelectPage(
+                             -directory => 'C:/Windows/System32',
+                             -variable => \$chosen_file,
+                            );
+
+Adds a page (C<Tk::Frame>) that contains a "Browse" button which pops up a file-select dialog box.
+The selected file will be displayed in a read-only Entry widget.
+
+Supply in C<-directory> the full path of an existing folder where the user's search shall begin.
+
+Supply in C<-variable> a reference to a variable to have set with the chosen file name.
+
+You may also specify the C<-title>, C<-subtitle> and C<-text> parameters, as
+in L<METHOD blank_frame>.
+
+=cut
+
+sub addFileSelectPage
+  {
+  my ($self, $args) = (shift, {@_});
+  $self->addPage( sub { $self->page_fileSelect($args) } );
+  } # addFileSelectPage
+
+#
+# PRIVATE METHOD page_fileSelect
+#
+# As blank_frame plus:
+# -variable => Reference to a variable to set.
+# -directory  => start dir
+sub page_fileSelect
+  {
+  my ($self,$args) = (shift,shift);
+  # Verify arguments:
+  if (not $args->{-variable})
+    {
+    confess "You must supply a -variable parameter";
+    }
+  elsif (not ref $args->{-variable})
+    {
+    confess "The -variable parameter must be a reference";
+    }
+  $args->{-directory} ||= '.';
+  $args->{-title} ||= "Please choose an existing file";
+  $args->{-subtitle} ||= "After you have made your choice, click 'Next' to continue.";
+  $args->{-text} ||= '';
+  # Create the mother frame:
+  my ($frame, @pl) = $self->blank_frame(
+                                        -title => $args->{-title},
+                                        -subtitle => $args->{-subtitle},
+                                        -text => $args->{-text},
+                                        -wait => $args->{-wait},
+                                       );
+  # Put some space around the embedded elements:
+  $frame->Frame(-height=>10)->pack(qw( -side top ));
+  $frame->Frame(-height=>10)->pack(qw( -side bottom ));
+  my $entry = $frame->Entry(
+                            -justify => 'right',
+                            -textvariable => $args->{-variable},
+                            # For now (i.e. because we're lazy), don't
+                            # let the user type in.  They must click
+                            # the Browse button:
+                            -state => 'readonly',
+                           )->pack(-side => 'left',
+                                   -anchor => 'w',
+                                   -fill => "x",
+                                   -expand => 1,
+                                   -padx => 3,
+                                  );
+  $entry->configure(-background => $self->cget("-background")) if $self->cget("-background");
+  my $bBrowse = $frame->Button(
+                               -text => 'Browse...',
+                               -command => sub
+                                 {
+                                 my $sFname = $frame->getOpenFile(
+                                                                  -initialdir => $args->{-directory},
+                                                                  -title => $args->{-title},
+                                                                 );
+                                 ${$args->{-variable}} = $sFname if $sFname;
+                                 },
+                              )->pack(qw( -side left -padx 3));
+  return $frame;
+  } # page_fileSelect
 
 
 =head1 METHOD addTaskListPage
@@ -1644,7 +1751,7 @@ action event handlers, supplied as code-references executed before, during and/o
 after the button press.
 
 The handler code should return a Boolean value, signifying whether the remainder of
-the action should continue. If a false value is returned, execution of the event
+the action should continue.  If a false value is returned, execution of the event
 handler halts.
 
 =over 4

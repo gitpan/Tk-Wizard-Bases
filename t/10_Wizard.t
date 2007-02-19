@@ -17,7 +17,7 @@ use Cwd;
 
 my $root = cwd =~ /\/t$/? '..' : '.';
 
-use vars qw/$GET_DIR $user_chosen_dir $SPLASH/;
+use vars qw/$GET_DIR $GET_FILE $user_chosen_dir $user_chosen_file $SPLASH/;
 
 our $WAIT = 1;
 
@@ -32,8 +32,8 @@ foreach my $style ('top', '95') {
 	);
 	isa_ok($wizard, "Tk::Wizard");
 	$wizard->configure(
-		-preNextButtonAction => sub { &preNextButtonAction($wizard) },
-		-finishButtonAction  => sub { ok(1, 'user clicked finish') },
+		-preNextButtonAction => sub { &preNextButtonAction($wizard); },
+		-finishButtonAction  => sub { ok(1, 'user clicked finish'); },
 	);
 	isa_ok($wizard->cget(-preNextButtonAction), "Tk::Callback");
 
@@ -72,6 +72,11 @@ foreach my $style ('top', '95') {
 		-variable	=> \$user_chosen_dir,
 	);
 	is($GET_DIR, 7);
+	$GET_FILE = $wizard->addFileSelectPage (
+                                                -wait => $WAIT,
+                                                -variable	=> \$user_chosen_file,
+                                               );
+	is($GET_FILE, 8);
 
 	my $p = $wizard->addPage(
 		sub {
