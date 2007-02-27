@@ -1,6 +1,12 @@
 Tk::Wizard CHANGE LOG
 ---------------------
 
+Version 1.952, 27 Feb. 2007 (interim release by Martin Thurn)	
+
+	* 52_Installer.t: does not rely on $ENV{TMP} now
+	* Installer.pm: $VERSION now works on linux
+	* Wizard.pm: $VERSION now works on linux
+
 Version 1.951, 19 Feb. 2007 (interim release by Martin Thurn)	
 	
 	* Wizard.pm: All "ButtonAction" callbacks now must really return non-false value in order for operation to continue, as the documentation has always said.  (Previous release seemed to be opposite?)

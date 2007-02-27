@@ -1,49 +1,52 @@
 #! perl
-use vars qw/$VERSION/;
-$VERSION = 1;	# 17 May 2006
 
-use Test::More tests=>19;
+my $VERSION = 1.952;  # Martin Thurn, 2007-02-27
+
+use Test::More tests => 19;
 
 no warnings;
 use strict;
+use ExtUtils::testlib;
 
-use lib '../lib';
-use_ok("Tk::Wizard::Installer" =>  1.931);
+use_ok("Tk::Wizard::Installer");
 
 my $WAIT = 1;
 
-our $TEMP_DIR = $ENV{TEMP} || $ENV{TMP} || "C:/temp" ;
-mkdir("/temp",0777) if !-d $TEMP_DIR;
-$TEMP_DIR =~ s/\\/\//g;
+our $TEMP_DIR = 't/tmp';
+mkdir($TEMP_DIR, 0777);
+# $TEMP_DIR =~ s/\\/\//g;
 my $testdir = $TEMP_DIR.'/__perltk_wizard';
 my $MADE_DIR;
-if (!-d $testdir){
-	$MADE_DIR=1;
-	mkdir $testdir or BAIL_OUT ($!);
-};
-for (1..2){
-	local *OUT;
-	open OUT, ">".$testdir."/$_" or BAIL_OUT ($!);
-	print OUT "Tk::Wizard::Installer Test. Please ignore or delete.\n\nThis is file $_\n\n".scalar(localtime)."\n\n";
-	close OUT;
-}
-for (3..4){
-	unlink $testdir."/$_"
-}
+if (!-d $testdir)
+  {
+  mkdir $testdir or BAIL_OUT ($!);
+  $MADE_DIR=1;
+  }
+for (1..2)
+  {
+  local *OUT;
+  open OUT, ">".$testdir."/$_" or BAIL_OUT ($!);
+  print OUT "Tk::Wizard::Installer Test. Please ignore or delete.\n\nThis is file $_\n\n".scalar(localtime)."\n\n";
+  close OUT;
+  } # for 1,2
+for (3..4)
+  {
+  unlink $testdir."/$_"
+  } # for 3,4
 
 my $wizard = Tk::Wizard::Installer->new(
-	-title	=> "Installer Test",
-);
+                                        -title	=> "Installer Test",
+                                       );
 isa_ok($wizard,'Tk::Wizard::Installer');
 isa_ok($wizard->parent, "Tk::MainWindow","Parent");
 
 ok( $wizard->configure(
 	-preNextButtonAction => sub { &preNextButtonAction($wizard) },
 	-finishButtonAction  => sub { ok(1,'Finished'); 1 },
-), 'Configure');
+                      ), 'Configured');
 
-isa_ok($wizard->cget(-preNextButtonAction),"Tk::Callback");
-isa_ok($wizard->cget(-finishButtonAction),"Tk::Callback");
+isa_ok($wizard->cget(-preNextButtonAction), "Tk::Callback");
+isa_ok($wizard->cget(-finishButtonAction), "Tk::Callback");
 
 
 # Create pages
@@ -52,13 +55,13 @@ my $SPLASH  = $wizard->addPage( sub{ page_splash ($wizard)} );
 is($SPLASH,1,'Splash page is first');
 
 ok(
-	$wizard->addFileListPage(
-		-wait	=> $WAIT,
-        -copy	=> 1,
-        -from	=> [ $testdir."/1", $testdir."/2", ],
-        -to		=> [ $testdir."/3", $testdir."/4",],
-	)
-, 'add File List page');
+   $wizard->addFileListPage(
+                            -wait	=> $WAIT,
+                            -copy	=> 1,
+                            -from	=> [ $testdir."/1", $testdir."/2", ],
+                            -to		=> [ $testdir."/3", $testdir."/4",],
+                           )
+   , 'added File List page');
 
 ok( $wizard->addPage( sub {
 	return $wizard->blank_frame(

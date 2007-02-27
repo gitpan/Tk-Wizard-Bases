@@ -39,7 +39,7 @@ use Cwd;
 use File::Path;
 use File::Copy;
 use File::Spec;
-use Tk::Wizard 1.943;
+use Tk::Wizard;
 use Tk::ProgressBar;
 use Tk::LabFrame;
 require Tk::ErrorDialog;

@@ -1,6 +1,6 @@
 package Tk::Wizard;
 $Tk::Wizard::DEBUG = undef;
-my
+our
 # $VERSION = do { my @r = (q$Revision: 1.951 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 $VERSION = '1.951'; # Martin Thurn's interim release
 
