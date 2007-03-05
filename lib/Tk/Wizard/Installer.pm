@@ -1,13 +1,15 @@
 package Tk::Wizard::Installer;
 
-$Tk::Wizard::Installer::VERSION = do { my @r = (q$Revision: 1.932 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
+# $Tk::Wizard::Installer::VERSION = do { my @r = (q$Revision: 1.932 $ =~ /\d+/g); sprintf "%d."."%03d" x $#r, @r };
 # 24 April 2006
+
+my $VERSION = '1.933';  # interim release by Martin Thurn, 2007-03-04
 
 =head1 NAME
 
 Tk::Wizard::Installer - building-blocks for a software install wizard
 
-	use Tk::Wizard::Installer 1.932;
+	use Tk::Wizard::Installer;
 	my $wizard = new Tk::Wizard::Installer( -title => "Installer Test", );
 	$wizard->addDownloadPage(
 		-wait   => undef,
@@ -71,17 +73,17 @@ my %LABELS = (
 
 This module makes the first moves towards a C<Tk::Wizard> extension
 to automate software installation, primarily for end-users, in the manner
-of I<Install Sheild>.
+of I<InstallShield>.
 
 If you are looking for a freeware software installer that is not
-dependant upon Perl, try I<Inno Setup> - C<http://www.jrsoftware.org/>. It's
+dependent upon Perl, try I<Inno Setup> - C<http://www.jrsoftware.org/>. It's
 so good, even Microsoft have been caught using it.
 
 =head1 DEPENDENCIES
 
-	Tk::Wizard;
-	Tk::ProgressBar;
-	Tk::LabFrame;
+  Tk::Wizard;
+  Tk::ProgressBar;
+  Tk::LabFrame;
 
 =head1 DETAILS
 
@@ -90,7 +92,7 @@ plus those listed in the remainder of this document.
 
 =head2 METHOD addLicencePage
 
-	$wizard->addLicencePage ( -filepath => $path_to_licence_text )
+  $wizard->addLicencePage ( -filepath => $path_to_licence_text )
 
 Adds a page (C<Tk::Frame>) that contains a scroll text box of a licence text file
 specifed in the C<-filepath> argument. Presents the user with two
@@ -110,7 +112,6 @@ sub addLicencePage { my ($self,$args) = (shift, {@_});
 	die "No -filepath argument present" if not $args->{-filepath};
 	$self->addPage( sub { $self->page_licence_agreement($args->{-filepath} )  } );
 }
-
 
 
 #
@@ -496,11 +497,12 @@ sub install_files { my ($self,$args) = (shift,shift);
 			$self->{-bar}->update;
 
 			# Make the path, if needs be
-			my $d = "$tv/$td";
-			$d =~ s/[\\\/]+/\//g;
-			if (!-d "$d"){
-				mkpath $d or croak "Could not make path $d : $!";
-			}
+			my $d = File::Spec->catpath($tv, $td);
+			# $d =~ s/[\\\/]+/\//g;
+			if (!-d "$d")
+                          {
+                          mkpath $d or croak "Could not make path $d : $!";
+                          } # if
 
 			# Do the move/copy
 			if ($args->{-move}){

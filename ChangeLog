@@ -1,6 +1,9 @@
 Tk::Wizard CHANGE LOG
 ---------------------
 
+Version 1.953, 4 Mar. 2007 (interim release by Martin Thurn)	
+	* Installer.pm: use catpath rather than raw slashes
+
 Version 1.952, 27 Feb. 2007 (interim release by Martin Thurn)	
 
 	* 52_Installer.t: does not rely on $ENV{TMP} now

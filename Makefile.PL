@@ -33,7 +33,7 @@ WriteMakefile(
 	'ABSTRACT' => 'GUI for step-by-step interactive logical process',
 	'DISTNAME' => 'Tk-Wizard-Bases',
 	'NAME' => 'Tk::Wizard',
-	'VERSION'	=> 1.952,
+	'VERSION'	=> 1.953,
 	'PREREQ_PM' => $prereq,
 	(
 		$] >= 5.005 ?    ## Add these new keywords supported since 5.005

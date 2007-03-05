@@ -2,36 +2,43 @@
 
 my $VERSION = 1.952;  # Martin Thurn, 2007-02-27
 
-use Test::More tests => 19;
+use Test::More no_plan;
 
-no warnings;
+use warnings;
 use strict;
 use ExtUtils::testlib;
 
 use_ok("Tk::Wizard::Installer");
 
 my $WAIT = 1;
+my @asFrom = qw( 1 2 );
+my @asDest = qw( 3 4 );
 
 our $TEMP_DIR = 't/tmp';
 mkdir($TEMP_DIR, 0777);
-# $TEMP_DIR =~ s/\\/\//g;
-my $testdir = $TEMP_DIR.'/__perltk_wizard';
-my $MADE_DIR;
-if (!-d $testdir)
+if (! -d $TEMP_DIR)
   {
-  mkdir $testdir or BAIL_OUT ($!);
-  $MADE_DIR=1;
-  }
-for (1..2)
+  mkdir $TEMP_DIR or bail_out($!);
+  } # if
+my $testdir = "$TEMP_DIR/__perltk_wizard";
+if (! -d $testdir)
   {
+  mkdir $testdir or bail_out($!);
+  } # if
+for (@asFrom)
+  {
+  my $sFrom = "$testdir/$_";
   local *OUT;
-  open OUT, ">".$testdir."/$_" or BAIL_OUT ($!);
-  print OUT "Tk::Wizard::Installer Test. Please ignore or delete.\n\nThis is file $_\n\n".scalar(localtime)."\n\n";
-  close OUT;
+  ok(open(OUT, '>', $sFrom), qq'opened $sFrom for write') or bail_out($!);
+  ok(print(OUT "Tk::Wizard::Installer Test. Please ignore or delete.\n\nThis is file $_\n\n".scalar(localtime)."\n\n"), qq'wrote contents to $sFrom');
+  ok(close OUT, qq'closed $sFrom');
   } # for 1,2
-for (3..4)
+for (@asDest)
   {
-  unlink $testdir."/$_"
+  my $sDest = "$testdir/$_";
+  unlink $sDest;
+  # Make sure destination files to NOT exist:
+  ok(! -e $sDest, qq'destination file $sDest does not exist before test');
   } # for 3,4
 
 my $wizard = Tk::Wizard::Installer->new(
@@ -56,10 +63,10 @@ is($SPLASH,1,'Splash page is first');
 
 ok(
    $wizard->addFileListPage(
-                            -wait	=> $WAIT,
-                            -copy	=> 1,
-                            -from	=> [ $testdir."/1", $testdir."/2", ],
-                            -to		=> [ $testdir."/3", $testdir."/4",],
+                            -wait => $WAIT,
+                            -copy => 1,
+                            -from => [ map { "$testdir/$_" } @asFrom ],
+                            -to => [ map { "$testdir/$_" } @asDest ],
                            )
    , 'added File List page');
 
@@ -74,21 +81,25 @@ ok( $wizard->addPage( sub {
 
 isa_ok($wizard->{wizardPageList},'ARRAY', 'Page list array');
 is(scalar(@{$wizard->{wizardPageList}}), 3, 'Number of pages');
-foreach (1..3){
-	isa_ok($wizard->{wizardPageList}->[0], 'CODE', 'Page in list');
-}
+foreach (0..2)
+  {
+  isa_ok($wizard->{wizardPageList}->[$_], 'CODE', qq'Page $_ in list');
+  } # foreach
 
 ok($wizard->Show, "Show");
 Tk::Wizard::Installer::MainLoop();
 ok(1,"Exited MainLoop");
 
-for (1..2){
-	unlink $testdir."/$_";
-}
-for (3..4){
-	ok(-e($testdir."/$_"),'File copied');
-	unlink $testdir."/$_" or diag "Can't remove $testdir/$_: $!";
-}
+for (@asFrom)
+  {
+  unlink $testdir."/$_";
+  } # for
+for (@asDest)
+  {
+  my $sDest = "$testdir/$_";
+  ok(-e($sDest), qq'File copied to $sDest');
+  unlink $sDest or diag "Can not remove $sDest: $!";
+  } # for
 
 
 unlink $testdir;
@@ -110,9 +121,10 @@ sub page_splash { my $wizard = shift;
 
 sub preNextButtonAction { return 1; }
 
-sub BAIL_OUT {
-	diag @_;
-	exit;
-}
+sub bail_out
+  {
+  diag @_;
+  exit;
+  } # bail_out
 
 __END__
